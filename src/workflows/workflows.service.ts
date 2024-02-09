@@ -315,39 +315,42 @@ export class WorkflowsService {
 		return newWorkflow;
 	}
 
-	async takeToWork(id: string, login: string) {
-		const workflow = await this.findWorkflowById(id);
-		if (workflow.executors.includes(login)) {
-			throw new BadRequestException('You are already in this workflow');
-		}
-		const newExecutors = workflow.executors.concat(login);
-		const newWorkflow = await this.updateWorkflow(
-			{
-				_id: id,
-				executors: newExecutors,
-			},
-			login,
-		);
-		const user = this.usersDBService.getById(login);
-		if (!user.currentWorkflowInWork) {
-			await this.userService.updateUser(
+	async takeToWork({ ids }: IMongoIdArray, login: string) {
+		for (const id of ids) {
+			const workflow = await this.findWorkflowById(id);
+			if (workflow.executors.includes(login)) {
+				throw new BadRequestException(
+					'You are already in this workflow',
+				);
+			}
+			const newExecutors = workflow.executors.concat(login);
+			await this.updateWorkflow(
 				{
-					_id: login,
-					currentWorkflowInWork: id,
+					_id: id,
+					executors: newExecutors,
 				},
 				login,
 			);
+			const user = this.usersDBService.getById(login);
+			if (!user.currentWorkflowInWork) {
+				await this.userService.updateUser(
+					{
+						_id: login,
+						currentWorkflowInWork: id,
+					},
+					login,
+				);
+			}
+			await this.logService.saveToLog({
+				bd: 'workflow',
+				date: Date.now(),
+				description: '',
+				operation: 'take',
+				idWorker: login,
+				idSubject: id,
+			});
 		}
-		await this.logService.saveToLog({
-			bd: 'workflow',
-			date: Date.now(),
-			description: '',
-			operation: 'take',
-			idWorker: login,
-			idSubject: id,
-		});
-
-		return newWorkflow;
+		return true;
 	}
 
 	async closeWork(id: string, login: string, newDepartment?: string) {

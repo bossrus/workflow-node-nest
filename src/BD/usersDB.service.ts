@@ -116,6 +116,8 @@ export class UsersDBService {
 	}
 
 	async findAdmin(_id: string, loginToken: string) {
+		console.log(this._users[_id]);
+		console.log(this._tokens[_id]);
 		return (
 			this._users[_id] &&
 			this._tokens[_id] === loginToken &&

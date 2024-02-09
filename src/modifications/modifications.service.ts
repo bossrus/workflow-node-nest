@@ -26,7 +26,7 @@ export class ModificationsService {
 	) {}
 
 	async onModuleInit() {
-		console.log('\n   \tзагружаю modificationsDB\n');
+		console.log('\tзагружаю modificationsDB');
 		this.modificationsDBService.modifications =
 			await this.loadModificationsFromBase();
 	}

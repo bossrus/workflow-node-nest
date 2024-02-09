@@ -14,7 +14,7 @@ import {
 	IWorkflowUpdate,
 } from '@/dto-schemas-interfaces/workflow.dto.schema';
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
-import { Auth } from '@/services/auth';
+import Auth from '@/services/auth';
 import { IMongoIdArray } from '@/dto-schemas-interfaces/mongoIds.dto.schema';
 
 @Controller('workflows')
@@ -81,13 +81,13 @@ export class WorkflowsController {
 		return this.workflowsService.addToDescription(id, text, login);
 	}
 
-	@Patch('take/:id')
+	@Patch('take')
 	@Auth()
 	async takeInWork(
-		@Param('id', isValidIdPipe) id: string,
+		@Body() workflowIds: IMongoIdArray,
 		@Headers('auth_login') login: string,
-	): Promise<IWorkflow> {
-		return this.workflowsService.takeToWork(id, login);
+	): Promise<boolean> {
+		return this.workflowsService.takeToWork(workflowIds, login);
 	}
 
 	@Patch('close/:id')

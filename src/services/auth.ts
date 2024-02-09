@@ -38,6 +38,8 @@ export class AdminGuard implements CanActivate {
 		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
 			request.headers;
 		console.log('\n\n>>>validation Admin:');
+		console.log('\t_id = ', _id);
+		console.log('\tloginToken = ', loginToken);
 		const user = await this.usersDBService.findAdmin(_id, loginToken);
 		console.log('\tuser = ', user);
 		return user == true;
@@ -106,3 +108,4 @@ type IRole = keyof typeof RoleGuards;
 
 export const Auth = (role: IRole = 'user') =>
 	applyDecorators(UseGuards(RoleGuards[role]));
+export default Auth;

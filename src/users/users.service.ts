@@ -28,7 +28,7 @@ export class UsersService {
 	) {}
 
 	async onModuleInit() {
-		console.log('\n   \tзагружаю usersDB\n');
+		console.log('\tзагружаю usersDB');
 		this.usersDBService.users = await this.loadUsersFromBase();
 	}
 

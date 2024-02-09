@@ -7,7 +7,8 @@ export interface IWebsocket {
 		| 'invite'
 		| 'type'
 		| 'flash'
-		| 'workflow';
+		| 'workflow'
+		| 'websocket';
 	operation: 'update' | 'delete';
 	id: string;
 	version: number;

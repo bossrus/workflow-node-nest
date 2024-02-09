@@ -1,14 +1,5 @@
-import {
-	Body,
-	Controller,
-	Delete,
-	Get,
-	Headers,
-	Param,
-	Post,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Post } from '@nestjs/common';
 import { FlashesService } from './flashes.service';
-import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import { Auth } from '@/services/auth';
 import { IFlashMessages } from '@/dto-schemas-interfaces/flashMessage.dto.schema';
 
@@ -35,9 +26,7 @@ export class FlashesController {
 
 	@Delete()
 	@Auth()
-	async deleteFlash(
-		@Headers('auth_login') login: string,
-	): Promise<void> {
+	async deleteFlash(@Headers('auth_login') login: string): Promise<void> {
 		return this.flashsService.deleteFlash(login);
 	}
 }

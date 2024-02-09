@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WebsocketModule } from './websockets/websocket.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DB_URI } from '@/consts/db';
+import { BD_URI } from '@/consts/db';
 import { DepartmentsModule } from './departments/departments.module';
 import { UsersModule } from '@/users/users.module';
 import { ModificationsModule } from '@/modifications/modifications.module';
@@ -15,7 +15,7 @@ import { FlashesModule } from '@/flashes/flashes.module';
 
 @Module({
 	imports: [
-		MongooseModule.forRoot(DB_URI),
+		MongooseModule.forRoot(BD_URI),
 		WebsocketModule,
 		LogModule,
 		UsersModule,

@@ -3,7 +3,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { IUser, UserSchema } from '@/dto-schemas-interfaces/user.dto.schema';
-import { WebsocketService } from '@/websockets/websocket.service';
 import { DbModule } from '@/BD/db.module';
 import { MailModule } from '@/mail/mail.module';
 import { WebsocketModule } from '@/websockets/websocket.module';

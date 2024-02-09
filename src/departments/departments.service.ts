@@ -13,7 +13,6 @@ import { WebsocketService } from '@/websockets/websocket.service';
 import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
 import { DepartmentsDBService } from '@/BD/departmentsDB.service';
-import { UsersDBService } from '@/BD/usersDB.service';
 import { LogService } from '@/log/log.service';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class DepartmentsService {
 	) {}
 
 	async onModuleInit() {
-		console.log('\n   \tзагружаю departmentsDB\n');
+		console.log('\tзагружаю departmentsDB');
 		this.departmentsDBService.departments =
 			await this.loadDepartmentsFromBase();
 	}

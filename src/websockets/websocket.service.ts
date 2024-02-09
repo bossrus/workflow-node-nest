@@ -1,14 +1,12 @@
 import {
-	ConnectedSocket,
-	MessageBody,
 	OnGatewayConnection,
 	OnGatewayDisconnect,
-	SubscribeMessage,
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { IWebsocket } from '@/dto-schemas-interfaces/websocket.interface';
+import { UsersDBService } from '@/BD/usersDB.service';
 
 @WebSocketGateway(3333)
 export class WebsocketService
@@ -17,31 +15,63 @@ export class WebsocketService
 	@WebSocketServer()
 	server: Server;
 
-	handleConnection(client: Socket): any {
+	constructor(private usersDBService: UsersDBService) {}
+
+	async handleConnection(client: Socket): Promise<void> {
 		console.log(`Client connected: ${client.id}`);
-		console.log('Login: ', client.handshake.query.login);
-		console.log('Password: ', client.handshake.query.password);
-		console.log('клиенты: ', this.getConnectedClients(), '\n');
+		const login = client.handshake.query.login as string;
+		const token = client.handshake.query.loginToken as string;
+
+		console.log('Login: ', login);
+		console.log('loginToken: ', token);
+
+		if (!(await this.usersDBService.findUser(login, token))) {
+			client.disconnect();
+		} else {
+			await this.sendMessage({
+				bd: 'websocket',
+				operation: 'update',
+				id: JSON.stringify(await this.getConnectedClients()),
+				version: 0,
+			});
+		}
 	}
 
-	handleDisconnect(client: Socket): any {
+	async handleDisconnect(client: Socket): Promise<void> {
 		console.log(`Client disconnected: ${client.id}`);
-		console.log('клиенты: ', this.getConnectedClients());
+		await this.sendMessageToAnywhere({
+			bd: 'websocket',
+			operation: 'update',
+			id: JSON.stringify(await this.getConnectedClients()),
+			version: 0,
+		});
+		console.log('клиенты: ', await this.getConnectedClients());
 	}
-
-	// @SubscribeMessage('message')
-	// handleMessage(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-	// const mes = `от пользователя ${client.id} получено сообщение ${data}`;
-	// console.log(mes);
-	// this.server.emit('servermessage', mes); //отправка всем
-	// client.broadcast.emit('servermessage', data); //отправка всем, кроме автора
-	// }
 
 	async sendMessage(message: IWebsocket) {
+		if (message.bd === 'flash' || message.bd === 'invite') {
+			await this.sendMessageToUser(message);
+		} else {
+			await this.sendMessageToAnywhere(message);
+		}
+	}
+
+	async sendMessageToUser(message: IWebsocket) {
+		const client = [...this.server.sockets.sockets.values()].find(
+			(socket) => socket.handshake.query.login === message.id,
+		);
+		if (client) {
+			client.emit('servermessage', message);
+		}
+	}
+
+	private async sendMessageToAnywhere(message: IWebsocket) {
 		this.server.emit('servermessage', message); //отправка всем
 	}
 
-	private getConnectedClients() {
-		return [...this.server.sockets.sockets.keys()];
+	private async getConnectedClients() {
+		return [...this.server.sockets.sockets.values()].map(
+			(socket) => socket.handshake.query.login,
+		);
 	}
 }

@@ -13,7 +13,6 @@ import { WebsocketService } from '@/websockets/websocket.service';
 import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
 import { WorktypesDBService } from '@/BD/worktypesDB.service';
-import { UsersDBService } from '@/BD/usersDB.service';
 import { LogService } from '@/log/log.service';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class WorktypesService {
 	) {}
 
 	async onModuleInit() {
-		console.log('\n   \tзагружаю worktypesDB\n');
+		console.log('\tзагружаю worktypesDB');
 		this.worktypesDBService.worktypes = await this.loadWorktypesFromBase();
 	}
 

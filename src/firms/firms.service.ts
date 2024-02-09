@@ -23,7 +23,7 @@ export class FirmsService {
 	) {}
 
 	async onModuleInit() {
-		console.log('\n   \tзагружаю firmsDB\n');
+		console.log('\tзагружаю firmsDB');
 		this.firmsDBService.firms = await this.loadFirmsFromBase();
 	}
 
