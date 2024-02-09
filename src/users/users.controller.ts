@@ -1,0 +1,108 @@
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	Headers,
+	Param,
+	Patch,
+	Post,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { IUser, IUserUpdate } from '@/dto-schemas-interfaces/user.dto.schema';
+import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
+import Auth from '@/services/auth';
+import { IUsersDB } from '@/BD/usersDB.service';
+import {
+	CONTROL_PANEL_FRONT,
+	WRONG_EMAIL_TOKEN_PAGE,
+} from '@/consts/serveresAddresses';
+
+// import Auth from '@/services/auth';
+
+@Controller('users')
+export class UsersController {
+	constructor(private readonly usersService: UsersService) {}
+
+	@Post()
+	@Auth('admin')
+	async createUser(
+		@Body() createUserDto: IUser,
+		@Headers('auth_login') login: string,
+	): Promise<IUser> {
+		return this.usersService.createUser(createUserDto, login);
+	}
+
+	@Post('login')
+	async loginUser(@Body() loginUserDto: IUserUpdate) {
+		return this.usersService.loginUser(loginUserDto);
+	}
+
+	@Get('admin/:id')
+	@Auth('admin')
+	async findUserByIdAdmin(
+		@Param('id', isValidIdPipe) id: string,
+	): Promise<IUserUpdate> {
+		return this.usersService.findUserByIdAdmin(id);
+	}
+
+	@Get('admin')
+	@Auth('admin')
+	async findAllUsersAdmin(): Promise<IUsersDB> {
+		return this.usersService.findAllUsersAdmin();
+	}
+
+	@Get()
+	@Auth()
+	async findAllUsers(): Promise<IUserUpdate[]> {
+		return this.usersService.findAllUsers();
+	}
+
+	@Get('confirmEmail/:id/:token')
+	async confirmEmail(
+		@Param('id', isValidIdPipe) id: string,
+		@Param('token') token: string,
+	): Promise<string> {
+		const relink = (await this.usersService.confirmEmail(id, token))
+			? CONTROL_PANEL_FRONT
+			: WRONG_EMAIL_TOKEN_PAGE;
+		//TODO подставить редирект когда буду делать фронт
+		return relink;
+	}
+
+	@Get(':id')
+	@Auth()
+	async findUserById(
+		@Param('id', isValidIdPipe) id: string,
+		@Headers('auth_login') login: string,
+	): Promise<IUserUpdate> {
+		return this.usersService.findUserById(id, login);
+	}
+
+	@Patch()
+	@Auth('admin')
+	async updateUser(
+		@Body() updateUserDto: IUserUpdate,
+		@Headers('auth_login') login: string,
+	): Promise<IUser> {
+		return this.usersService.updateUser(updateUserDto, login);
+	}
+
+	@Patch('email')
+	@Auth()
+	async updateUsersEmail(
+		@Body() updateUserDto: IUserUpdate,
+		@Headers('auth_login') login: string,
+	): Promise<boolean> {
+		return this.usersService.updateUsersEmail(updateUserDto, login);
+	}
+
+	@Delete(':id')
+	@Auth('admin')
+	async deleteUser(
+		@Param('id', isValidIdPipe) id: string,
+		@Headers('auth_login') login: string,
+	): Promise<void> {
+		return this.usersService.deleteUser(id, login);
+	}
+}
