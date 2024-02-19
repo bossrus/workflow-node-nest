@@ -15,6 +15,7 @@ import {
 } from '@/dto-schemas-interfaces/modification.dto.schema';
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import Auth from '@/services/auth';
+import { IModificationsDB } from '@/BD/modificationsDB.service';
 
 @Controller('modifications')
 export class ModificationsController {
@@ -34,7 +35,7 @@ export class ModificationsController {
 
 	@Get()
 	@Auth()
-	async findAllModifications(): Promise<IModification[]> {
+	async findAllModifications(): Promise<IModificationsDB> {
 		return this.modificationsService.findAllModifications();
 	}
 

@@ -15,8 +15,9 @@ import {
 } from '@/dto-schemas-interfaces/worktype.dto.schema';
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import Auth from '@/services/auth';
+import { IWorktypesDB } from '@/BD/worktypesDB.service';
 
-@Controller('worktypes')
+@Controller('typesOfWork')
 export class WorktypesController {
 	constructor(private readonly worktypesService: WorktypesService) {}
 
@@ -31,7 +32,7 @@ export class WorktypesController {
 
 	@Get()
 	@Auth()
-	async findAllWorktypes(): Promise<IWorktype[]> {
+	async findAllWorktypes(): Promise<IWorktypesDB> {
 		return this.worktypesService.findAllWorktypes();
 	}
 

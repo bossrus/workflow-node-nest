@@ -12,7 +12,10 @@ import { Model } from 'mongoose';
 import { WebsocketService } from '@/websockets/websocket.service';
 import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
-import { DepartmentsDBService } from '@/BD/departmentsDB.service';
+import {
+	DepartmentsDBService,
+	IDepartmentsDB,
+} from '@/BD/departmentsDB.service';
 import { LogService } from '@/log/log.service';
 
 @Injectable()
@@ -63,7 +66,7 @@ export class DepartmentsService {
 			.lean();
 	}
 
-	async findAllDepartments(): Promise<IDepartment[]> {
+	async findAllDepartments(): Promise<IDepartmentsDB> {
 		return this.departmentsDBService.departments;
 	}
 

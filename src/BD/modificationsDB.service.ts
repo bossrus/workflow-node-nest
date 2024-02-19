@@ -13,8 +13,8 @@ export interface IModificationsDB {
 export class ModificationsDBService {
 	private _modifications: IModificationsDB = {};
 
-	get modifications(): IModification[] {
-		return Object.values(this._modifications);
+	get modifications(): IModificationsDB {
+		return this._modifications;
 	}
 
 	set modifications(modifications: IModification[]) {

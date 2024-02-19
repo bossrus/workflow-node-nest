@@ -12,7 +12,10 @@ import { Model } from 'mongoose';
 import { WebsocketService } from '@/websockets/websocket.service';
 import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
-import { ModificationsDBService } from '@/BD/modificationsDB.service';
+import {
+	IModificationsDB,
+	ModificationsDBService,
+} from '@/BD/modificationsDB.service';
 import { LogService } from '@/log/log.service';
 
 @Injectable()
@@ -64,7 +67,7 @@ export class ModificationsService {
 			.lean();
 	}
 
-	async findAllModifications(): Promise<IModification[]> {
+	async findAllModifications(): Promise<IModificationsDB> {
 		return this.modificationsDBService.modifications;
 	}
 

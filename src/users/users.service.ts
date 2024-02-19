@@ -73,7 +73,7 @@ export class UsersService {
 		return this.usersDBService.users;
 	}
 
-	findAllUsers(): IUserUpdate[] {
+	findAllUsers(): IUsersDB {
 		return this.usersDBService.usersShort;
 	}
 
@@ -230,7 +230,7 @@ export class UsersService {
 			isDeleted: null,
 		});
 		if (!user || !(await compare(loginUserDto.password, user.password))) {
-			throw new UnauthorizedException('User not found');
+			throw new NotFoundException('User not found');
 		}
 		const salt = await genSalt(13);
 		user.loginToken = salt;
@@ -238,7 +238,18 @@ export class UsersService {
 			_id: user._id.toString(),
 			loginToken: salt,
 		});
-		return user.save();
+		await user.save();
+		return {
+			...this.usersDBService.getById(user.id.toString()),
+			loginToken: salt,
+		};
+	}
+
+	getAuthUser(_id: string, loginToken: string) {
+		return this.usersDBService.getUserByIdAndToken(
+			_id,
+			loginToken,
+		) as IUser;
 	}
 
 	async confirmEmail(id: string, token: string) {

@@ -12,6 +12,7 @@ import { FirmsService } from './firms.service';
 import { IFirm, IFirmUpdate } from '@/dto-schemas-interfaces/firm.dto.schema';
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import Auth from '@/services/auth';
+import { IFirmsDB } from '@/BD/firmsDB.service';
 
 @Controller('firms')
 export class FirmsController {
@@ -28,7 +29,7 @@ export class FirmsController {
 
 	@Get()
 	@Auth()
-	async findAllFirms(): Promise<IFirm[]> {
+	async findAllFirms(): Promise<IFirmsDB> {
 		return this.firmsService.findAllFirms();
 	}
 

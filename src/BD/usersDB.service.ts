@@ -36,12 +36,16 @@ export class UsersDBService {
 		}
 	}
 
-	get usersShort(): IUserUpdate[] {
-		return Object.values(this._users).map((user) => ({
-			_id: user._id,
-			name: user.name,
-			departments: user.departments,
-		}));
+	get usersShort(): IUsersDB {
+		const users: IUsersDB = {};
+		Object.values(this._users).map((user) => {
+			users[user._id.toString()] = {
+				_id: user._id,
+				name: user.name,
+				departments: user.departments,
+			};
+		});
+		return users;
 	}
 
 	getById(id: string): IUserUpdate {
@@ -86,6 +90,12 @@ export class UsersDBService {
 
 	deleteUser(id: string) {
 		delete this._users[id];
+	}
+
+	getUserByIdAndToken(_id: string, loginToken: string) {
+		return this._users[_id] && this._tokens[_id] === loginToken
+			? this._users[_id]
+			: null;
 	}
 
 	getEmailRecipients(currentDepartment: string): IEmailRecipient[] {

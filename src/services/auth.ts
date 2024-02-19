@@ -17,6 +17,7 @@ export class UserGuard implements CanActivate {
 		const request = context.switchToHttp().getRequest();
 		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
 			request.headers;
+		console.log('_id «', _id, '» loginToken = «', loginToken, '»');
 		console.log('\n\n>>>validation User:');
 		if (isValidMongodbId(_id)) {
 			console.log('\t_id = ', _id);
@@ -96,6 +97,14 @@ export class SeeStatisticGuard implements CanActivate {
 	}
 }
 
+//TODO удалить!!!!
+@Injectable()
+export class AlwaysTrueGuard implements CanActivate {
+	canActivate(): boolean {
+		return true;
+	}
+}
+
 const RoleGuards = {
 	user: UserGuard,
 	admin: AdminGuard,
@@ -107,5 +116,6 @@ const RoleGuards = {
 type IRole = keyof typeof RoleGuards;
 
 export const Auth = (role: IRole = 'user') =>
+	// applyDecorators(UseGuards(AlwaysTrueGuard));
 	applyDecorators(UseGuards(RoleGuards[role]));
 export default Auth;

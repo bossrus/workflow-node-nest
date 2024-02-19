@@ -9,7 +9,7 @@ import { Model } from 'mongoose';
 import { WebsocketService } from '@/websockets/websocket.service';
 import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
-import { FirmsDBService } from '@/BD/firmsDB.service';
+import { FirmsDBService, IFirmsDB } from '@/BD/firmsDB.service';
 import { LogService } from '@/log/log.service';
 
 @Injectable()
@@ -55,7 +55,7 @@ export class FirmsService {
 			.lean();
 	}
 
-	async findAllFirms(): Promise<IFirm[]> {
+	async findAllFirms(): Promise<IFirmsDB> {
 		return this.firmsDBService.firms;
 	}
 

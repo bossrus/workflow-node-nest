@@ -14,8 +14,8 @@ export interface IDepartmentsDB {
 export class DepartmentsDBService {
 	private _departments: IDepartmentsDB = {};
 
-	get departments(): IDepartment[] {
-		return Object.values(this._departments);
+	get departments(): IDepartmentsDB {
+		return this._departments;
 	}
 
 	set departments(departments: IDepartment[]) {

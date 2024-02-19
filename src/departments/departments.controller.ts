@@ -15,6 +15,7 @@ import {
 } from '@/dto-schemas-interfaces/department.dto.schema';
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import Auth from '@/services/auth';
+import { IDepartmentsDB } from '@/BD/departmentsDB.service';
 
 @Controller('departments')
 export class DepartmentsController {
@@ -31,7 +32,7 @@ export class DepartmentsController {
 
 	@Get()
 	@Auth()
-	async findAllDepartments(): Promise<IDepartment[]> {
+	async findAllDepartments(): Promise<IDepartmentsDB> {
 		return this.departmentsService.findAllDepartments();
 	}
 

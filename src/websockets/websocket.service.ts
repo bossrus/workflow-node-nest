@@ -8,24 +8,30 @@ import { Server, Socket } from 'socket.io';
 import { IWebsocket } from '@/dto-schemas-interfaces/websocket.interface';
 import { UsersDBService } from '@/BD/usersDB.service';
 
-@WebSocketGateway(3333)
+@WebSocketGateway(3333, { cors: true })
 export class WebsocketService
 	implements OnGatewayConnection, OnGatewayDisconnect
 {
 	@WebSocketServer()
 	server: Server;
 
-	constructor(private usersDBService: UsersDBService) {}
+	constructor(private usersDBService: UsersDBService) {
+		console.log(`Websocket Server started on http://localhost:3333`);
+	}
 
 	async handleConnection(client: Socket): Promise<void> {
 		console.log(`Client connected: ${client.id}`);
 		const login = client.handshake.query.login as string;
 		const token = client.handshake.query.loginToken as string;
 
-		console.log('Login: ', login);
-		console.log('loginToken: ', token);
+		console.log('cc\tLogin: ', login);
+		console.log('cc\tloginToken: ', token);
 
-		if (!(await this.usersDBService.findUser(login, token))) {
+		const user = await this.usersDBService.findUser(login, token);
+
+		console.log('cc\tпользователь: ', user);
+
+		if (!user) {
 			client.disconnect();
 		} else {
 			await this.sendMessage({
@@ -70,8 +76,11 @@ export class WebsocketService
 	}
 
 	private async getConnectedClients() {
-		return [...this.server.sockets.sockets.values()].map(
-			(socket) => socket.handshake.query.login,
-		);
+		const online: string[] = [];
+		[...this.server.sockets.sockets.values()].forEach((socket) => {
+			const login = socket.handshake.query.login as string;
+			if (!(login in online)) online.push(login);
+		});
+		return online;
 	}
 }

@@ -50,6 +50,8 @@ async function bootstrap() {
 		httpsOptions,
 	});
 	app.useGlobalPipes(new ValidationPipe()); // глобальная проверка каждого входящего запроса
+	app.enableCors();
+	console.log('enable cors');
 	await app.listen(3000);
 	console.log(`Application is running on: ${await app.getUrl()}`);
 }

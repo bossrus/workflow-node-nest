@@ -11,8 +11,8 @@ export interface IFirmsDB {
 export class FirmsDBService {
 	private _firms: IFirmsDB = {};
 
-	get firms(): IFirm[] {
-		return Object.values(this._firms);
+	get firms(): IFirmsDB {
+		return this._firms;
 	}
 
 	set firms(firms: IFirm[]) {

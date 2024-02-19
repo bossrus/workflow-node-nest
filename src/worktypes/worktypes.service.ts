@@ -12,7 +12,7 @@ import { Model } from 'mongoose';
 import { WebsocketService } from '@/websockets/websocket.service';
 import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
-import { WorktypesDBService } from '@/BD/worktypesDB.service';
+import { IWorktypesDB, WorktypesDBService } from '@/BD/worktypesDB.service';
 import { LogService } from '@/log/log.service';
 
 @Injectable()
@@ -61,7 +61,7 @@ export class WorktypesService {
 			.lean();
 	}
 
-	async findAllWorktypes(): Promise<IWorktype[]> {
+	async findAllWorktypes(): Promise<IWorktypesDB> {
 		return this.worktypesDBService.worktypes;
 	}
 

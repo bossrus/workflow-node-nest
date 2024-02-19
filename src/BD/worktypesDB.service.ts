@@ -14,8 +14,8 @@ export interface IWorktypesDB {
 export class WorktypesDBService {
 	private _worktypes: IWorktypesDB = {};
 
-	get worktypes(): IWorktype[] {
-		return Object.values(this._worktypes);
+	get worktypes(): IWorktypesDB {
+		return this._worktypes;
 	}
 
 	set worktypes(worktypes: IWorktype[]) {

@@ -17,6 +17,7 @@ import {
 	CONTROL_PANEL_FRONT,
 	WRONG_EMAIL_TOKEN_PAGE,
 } from '@/consts/serveresAddresses';
+import { get } from 'mongoose';
 
 // import Auth from '@/services/auth';
 
@@ -35,7 +36,16 @@ export class UsersController {
 
 	@Post('login')
 	async loginUser(@Body() loginUserDto: IUserUpdate) {
-		return this.usersService.loginUser(loginUserDto);
+		return { me: this.usersService.loginUser(loginUserDto) };
+	}
+
+	@Get('auth')
+	@Auth()
+	async getAuthUser(
+		@Headers('auth_login') login: string,
+		@Headers('auth_token') token: string,
+	) {
+		return { me: this.usersService.getAuthUser(login, token) };
 	}
 
 	@Get('admin/:id')
@@ -54,7 +64,7 @@ export class UsersController {
 
 	@Get()
 	@Auth()
-	async findAllUsers(): Promise<IUserUpdate[]> {
+	async findAllUsers(): Promise<IUsersDB> {
 		return this.usersService.findAllUsers();
 	}
 
