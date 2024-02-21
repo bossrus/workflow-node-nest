@@ -2,7 +2,6 @@ import {
 	BadRequestException,
 	Injectable,
 	NotFoundException,
-	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -11,7 +10,7 @@ import makeSlug from '@/services/makeSlug';
 import { compare, genSalt, hash } from 'bcrypt';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
 import { IUser, IUserUpdate } from '@/dto-schemas-interfaces/user.dto.schema';
-import { UsersDBService, IUsersDB } from '@/BD/usersDB.service';
+import { IUsersDB, UsersDBService } from '@/BD/usersDB.service';
 import { MailService } from '@/mail/mail.service';
 import { MAIN_SERVER } from '@/consts/serveresAddresses';
 import { LogService } from '@/log/log.service';
@@ -81,13 +80,16 @@ export class UsersService {
 		return this.usersDBService.getById(id);
 	}
 
-	findUserById(id: string, login: string) {
-		//если запрашиваешь сам себя, то получи полную информацию
-		if (login === id) {
-			console.log('запросил сам себя');
-			return this.findUserByIdAdmin(id);
-		}
+	findUserById(id: string) {
 		return this.usersDBService.getByIdShort(id);
+	}
+
+	showMe(id: string, login: string) {
+		if (login === id) {
+			return {
+				[id]: this.findUserByIdAdmin(id),
+			};
+		}
 	}
 
 	async updateUsersEmail({ _id, ...updateUser }: IUserUpdate, login: string) {
@@ -113,6 +115,15 @@ export class UsersService {
 				},
 			);
 			if (user) {
+				await this.updateUser(
+					{
+						_id: _id.toString(),
+						email: updateUser.email,
+						emailToken,
+						emailConfirmed,
+					},
+					login,
+				);
 				await this.mailService.sendEmailConfirmation(
 					updateUser.email,
 					this.usersDBService.getName(_id),
@@ -128,6 +139,44 @@ export class UsersService {
 				});
 				return true;
 			}
+		}
+		return false;
+	}
+
+	async updateMe({ _id, ...updateUser }: IUserUpdate, login: string) {
+		if (!_id) {
+			throw new BadRequestException('User _id is required');
+		}
+		if (_id !== login) {
+			throw new BadRequestException(
+				"you can't change someone else's account",
+			);
+		}
+		const user = await this.userModel.findOneAndUpdate(
+			{ _id },
+			{
+				$set: {
+					...updateUser,
+				},
+			},
+		);
+		if (user) {
+			await this.updateUser(
+				{
+					_id: _id.toString(),
+					...updateUser,
+				},
+				login,
+			);
+			await this.logService.saveToLog({
+				bd: 'user',
+				date: Date.now(),
+				description: 'add email',
+				operation: 'edit',
+				idWorker: login,
+				idSubject: _id,
+			});
+			return true;
 		}
 		return false;
 	}
@@ -240,16 +289,17 @@ export class UsersService {
 		});
 		await user.save();
 		return {
-			...this.usersDBService.getById(user.id.toString()),
-			loginToken: salt,
+			[user.id]: {
+				...this.usersDBService.getById(user.id.toString()),
+				loginToken: salt,
+			},
 		};
 	}
 
 	getAuthUser(_id: string, loginToken: string) {
-		return this.usersDBService.getUserByIdAndToken(
-			_id,
-			loginToken,
-		) as IUser;
+		return {
+			[_id]: this.usersDBService.getUserByIdAndToken(_id, loginToken),
+		};
 	}
 
 	async confirmEmail(id: string, token: string) {

@@ -95,6 +95,16 @@ export class IUser {
 	@IsBoolean()
 	canMakeModification: boolean;
 
+	@Prop({ default: false })
+	@IsBoolean()
+	@IsOptional()
+	isSoundOn?: boolean;
+
+	@Prop()
+	@IsOptional()
+	@IsString()
+	currentPage?: string;
+
 	@Prop({ default: undefined })
 	@IsNumber()
 	@IsOptional()

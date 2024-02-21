@@ -43,6 +43,7 @@ export class UsersDBService {
 				_id: user._id,
 				name: user.name,
 				departments: user.departments,
+				version: user.version,
 			};
 		});
 		return users;
@@ -57,6 +58,7 @@ export class UsersDBService {
 			name: this._users[id].name,
 			departments: this._users[id].departments,
 			_id: this._users[id]._id,
+			version: this._users[id].version,
 		};
 	}
 

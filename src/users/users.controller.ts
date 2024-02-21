@@ -17,7 +17,6 @@ import {
 	CONTROL_PANEL_FRONT,
 	WRONG_EMAIL_TOKEN_PAGE,
 } from '@/consts/serveresAddresses';
-import { get } from 'mongoose';
 
 // import Auth from '@/services/auth';
 
@@ -36,7 +35,7 @@ export class UsersController {
 
 	@Post('login')
 	async loginUser(@Body() loginUserDto: IUserUpdate) {
-		return { me: this.usersService.loginUser(loginUserDto) };
+		return this.usersService.loginUser(loginUserDto);
 	}
 
 	@Get('auth')
@@ -45,7 +44,7 @@ export class UsersController {
 		@Headers('auth_login') login: string,
 		@Headers('auth_token') token: string,
 	) {
-		return { me: this.usersService.getAuthUser(login, token) };
+		return this.usersService.getAuthUser(login, token);
 	}
 
 	@Get('admin/:id')
@@ -84,9 +83,17 @@ export class UsersController {
 	@Auth()
 	async findUserById(
 		@Param('id', isValidIdPipe) id: string,
+	): Promise<IUserUpdate> {
+		return this.usersService.findUserById(id);
+	}
+
+	@Get('me/:id')
+	@Auth()
+	async showMe(
+		@Param('id', isValidIdPipe) id: string,
 		@Headers('auth_login') login: string,
 	): Promise<IUserUpdate> {
-		return this.usersService.findUserById(id, login);
+		return this.usersService.showMe(id, login);
 	}
 
 	@Patch()
@@ -105,6 +112,15 @@ export class UsersController {
 		@Headers('auth_login') login: string,
 	): Promise<boolean> {
 		return this.usersService.updateUsersEmail(updateUserDto, login);
+	}
+
+	@Patch('me')
+	@Auth()
+	async updateMe(
+		@Body() updateUserDto: IUserUpdate,
+		@Headers('auth_login') login: string,
+	): Promise<boolean> {
+		return this.usersService.updateMe(updateUserDto, login);
 	}
 
 	@Delete(':id')
