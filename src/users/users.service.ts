@@ -253,8 +253,10 @@ export class UsersService {
 	}
 
 	async deleteUser(id: string, login: string): Promise<void> {
+		console.log('пришли убивать пользователя', id);
 		const user = this.findUserByIdAdmin(id);
 		if (user) {
+			console.log('\tнашли пользователя');
 			this.userModel.findByIdAndUpdate(id, { isDeleted: Date.now() });
 			await this.websocket.sendMessage({
 				bd: 'user',
@@ -263,6 +265,7 @@ export class UsersService {
 				version: user.version,
 			});
 			this.usersDBService.deleteUser(id);
+			console.log('\t\tи убили');
 			await this.logService.saveToLog({
 				bd: 'user',
 				date: Date.now(),
