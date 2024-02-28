@@ -88,7 +88,7 @@ export class WorkflowsService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!workflow) {
-			throw new NotFoundException('Workflow not found');
+			throw new NotFoundException('Нет такой работы');
 		}
 		return workflow;
 	}
@@ -98,7 +98,7 @@ export class WorkflowsService {
 		login: string,
 	): Promise<IWorkflow> {
 		if (!_id) {
-			throw new BadRequestException('Workflow _id is required');
+			return this.createWorkflow(updateWorkflow as IWorkflow, login);
 		}
 		const workflow = await this.workflowModel.findOne(
 			{
@@ -108,7 +108,7 @@ export class WorkflowsService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!workflow) {
-			throw new NotFoundException('Workflow not found');
+			throw new NotFoundException('Нет такой работы');
 		}
 		const newWorkflow = {
 			...workflow.toObject(),
@@ -319,9 +319,7 @@ export class WorkflowsService {
 		for (const id of ids) {
 			const workflow = await this.findWorkflowById(id);
 			if (workflow.executors.includes(login)) {
-				throw new BadRequestException(
-					'You are already in this workflow',
-				);
+				throw new BadRequestException('Вы уже делаете эту работу');
 			}
 			const newExecutors = workflow.executors.concat(login);
 			await this.updateWorkflow(
@@ -359,7 +357,7 @@ export class WorkflowsService {
 			newDepartment &&
 			!isValidMongodbId(newDepartment)
 		)
-			throw new BadRequestException('Wrong department id');
+			throw new BadRequestException('Неверный ID работы');
 		const workflow = await this.findWorkflowById(id);
 		let result =
 			workflow.currentDepartment === newDepartment
@@ -368,7 +366,7 @@ export class WorkflowsService {
 		if (newDepartment === '9999') result = 'Работа закончена';
 
 		if (!workflow.executors.includes(login)) {
-			throw new BadRequestException('You are not execute this workflow');
+			throw new BadRequestException('Вы не делаете эту работу');
 		}
 		const newExecutors = workflow.executors.filter(
 			(item) => item !== login,
@@ -518,7 +516,7 @@ export class WorkflowsService {
 			],
 		});
 		if (workflow) {
-			throw new BadRequestException('Workflow already exists');
+			throw new BadRequestException('Такая работа уже существует');
 		}
 	}
 }

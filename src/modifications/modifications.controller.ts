@@ -6,7 +6,6 @@ import {
 	Headers,
 	Param,
 	Patch,
-	Post,
 } from '@nestjs/common';
 import { ModificationsService } from './modifications.service';
 import {
@@ -20,18 +19,6 @@ import { IModificationsDB } from '@/BD/modificationsDB.service';
 @Controller('modifications')
 export class ModificationsController {
 	constructor(private readonly modificationsService: ModificationsService) {}
-
-	@Post()
-	@Auth('admin')
-	async createModification(
-		@Body() modification: IModification,
-		@Headers('auth_login') login: string,
-	): Promise<IModification> {
-		return this.modificationsService.createModification(
-			modification,
-			login,
-		);
-	}
 
 	@Get()
 	@Auth()

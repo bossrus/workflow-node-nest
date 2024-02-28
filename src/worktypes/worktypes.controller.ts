@@ -6,7 +6,6 @@ import {
 	Headers,
 	Param,
 	Patch,
-	Post,
 } from '@nestjs/common';
 import { WorktypesService } from './worktypes.service';
 import {
@@ -20,15 +19,6 @@ import { IWorktypesDB } from '@/BD/worktypesDB.service';
 @Controller('typesOfWork')
 export class WorktypesController {
 	constructor(private readonly worktypesService: WorktypesService) {}
-
-	@Post()
-	@Auth('admin')
-	async createWorktype(
-		@Body() worktype: IWorktype,
-		@Headers('auth_login') login: string,
-	): Promise<IWorktype> {
-		return this.worktypesService.createWorktype(worktype, login);
-	}
 
 	@Get()
 	@Auth()

@@ -6,7 +6,6 @@ import {
 	Headers,
 	Param,
 	Patch,
-	Post,
 } from '@nestjs/common';
 import { FirmsService } from './firms.service';
 import { IFirm, IFirmUpdate } from '@/dto-schemas-interfaces/firm.dto.schema';
@@ -17,15 +16,6 @@ import { IFirmsDB } from '@/BD/firmsDB.service';
 @Controller('firms')
 export class FirmsController {
 	constructor(private readonly firmsService: FirmsService) {}
-
-	@Post()
-	@Auth('admin')
-	async createFirm(
-		@Body() firm: IFirm,
-		@Headers('auth_login') login: string,
-	): Promise<IFirm> {
-		return this.firmsService.createFirm(firm, login);
-	}
 
 	@Get()
 	@Auth()

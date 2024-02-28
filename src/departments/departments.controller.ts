@@ -6,7 +6,6 @@ import {
 	Headers,
 	Param,
 	Patch,
-	Post,
 } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import {
@@ -20,15 +19,6 @@ import { IDepartmentsDB } from '@/BD/departmentsDB.service';
 @Controller('departments')
 export class DepartmentsController {
 	constructor(private readonly departmentsService: DepartmentsService) {}
-
-	@Post()
-	@Auth('admin')
-	async createDepartment(
-		@Body() department: IDepartment,
-		@Headers('auth_login') login: string,
-	): Promise<IDepartment> {
-		return this.departmentsService.createDepartment(department, login);
-	}
 
 	@Get()
 	@Auth()

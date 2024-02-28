@@ -80,7 +80,10 @@ export class ModificationsService {
 		login: string,
 	): Promise<IModification> {
 		if (!_id) {
-			throw new BadRequestException('Modification _id is required');
+			return this.createModification(
+				updateModification as IModification,
+				login,
+			);
 		}
 		const modification = await this.modificationModel.findOne(
 			{
@@ -90,7 +93,7 @@ export class ModificationsService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!modification) {
-			throw new NotFoundException('Modification not found');
+			throw new NotFoundException('Нет такого номера журнала');
 		}
 		const newModification = {
 			...modification.toObject(),
@@ -167,7 +170,7 @@ export class ModificationsService {
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
 		});
 		if (modification) {
-			throw new BadRequestException('Modification already exists');
+			throw new BadRequestException('Такой номер журнала уже существует');
 		}
 	}
 }

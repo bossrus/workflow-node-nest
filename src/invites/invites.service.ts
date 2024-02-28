@@ -1,16 +1,10 @@
-import {
-	BadRequestException,
-	Injectable,
-	NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IInviteToJoin } from '@/dto-schemas-interfaces/inviteToJoin.dto.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
 import { LogService } from '@/log/log.service';
-import { isValidMongodbId } from '@/services/_mongodb_id_valiator';
 import { WebsocketService } from '@/websockets/websocket.service';
-import { ILog } from '@/dto-schemas-interfaces/log.dto.schema';
 
 @Injectable()
 export class InvitesService {
@@ -57,7 +51,7 @@ export class InvitesService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!inviteToJoin || inviteToJoin.length === 0) {
-			throw new NotFoundException('InviteToJoin not found');
+			throw new NotFoundException('Такого приглашения не существует');
 		}
 		return inviteToJoin;
 	}

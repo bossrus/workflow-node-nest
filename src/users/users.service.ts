@@ -86,9 +86,10 @@ export class UsersService {
 
 	showMe(id: string, login: string) {
 		if (login === id) {
-			return {
-				[id]: this.findUserByIdAdmin(id),
-			};
+			return this.findUserByIdAdmin(id);
+			// {
+			// 	[id]:
+			// };
 		}
 	}
 
@@ -187,14 +188,14 @@ export class UsersService {
 		description: string = '',
 	): Promise<IUser> {
 		if (!_id) {
-			throw new BadRequestException('User _id is required');
+			return this.createUser(updateUser as IUser, login);
 		}
 		const user = await this.userModel.findOne({
 			_id,
 			isDeleted: null,
 		});
 		if (!user) {
-			throw new NotFoundException('User not found');
+			throw new NotFoundException('Нет такого пользователя');
 		}
 		const newUser = {
 			...user.toObject(),
@@ -279,7 +280,7 @@ export class UsersService {
 			isDeleted: null,
 		});
 		if (!user || !(await compare(loginUserDto.password, user.password))) {
-			throw new NotFoundException('User not found');
+			throw new NotFoundException('Нет такого пользователя');
 		}
 		const salt = await genSalt(13);
 		user.loginToken = salt;
@@ -331,7 +332,7 @@ export class UsersService {
 			],
 		});
 		if (user) {
-			throw new BadRequestException('User already exists');
+			throw new BadRequestException('Пользователь уже существует');
 		}
 	}
 

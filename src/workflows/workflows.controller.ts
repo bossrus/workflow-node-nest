@@ -3,10 +3,9 @@ import {
 	Controller,
 	Delete,
 	Get,
+	Headers,
 	Param,
 	Patch,
-	Post,
-	Headers,
 } from '@nestjs/common';
 import { WorkflowsService } from './workflows.service';
 import {
@@ -20,15 +19,6 @@ import { IMongoIdArray } from '@/dto-schemas-interfaces/mongoIds.dto.schema';
 @Controller('workflows')
 export class WorkflowsController {
 	constructor(private readonly workflowsService: WorkflowsService) {}
-
-	@Post()
-	@Auth('startStop')
-	async createWorkflow(
-		@Body() workflow: IWorkflow,
-		@Headers('auth_login') login: string,
-	): Promise<IWorkflow> {
-		return this.workflowsService.createWorkflow(workflow, login);
-	}
 
 	@Get()
 	@Auth()

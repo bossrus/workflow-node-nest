@@ -74,7 +74,7 @@ export class WorktypesService {
 		login: string,
 	): Promise<IWorktype> {
 		if (!_id) {
-			throw new BadRequestException('Worktype _id is required');
+			return this.createWorktype(updateWorktype as IWorktype, login);
 		}
 		const worktype = await this.worktypeModel.findOne(
 			{
@@ -84,7 +84,7 @@ export class WorktypesService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!worktype) {
-			throw new NotFoundException('Worktype not found');
+			throw new NotFoundException('Тип работы не существует');
 		}
 		const newWorktype = {
 			...worktype.toObject(),
@@ -163,7 +163,7 @@ export class WorktypesService {
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
 		});
 		if (worktype) {
-			throw new BadRequestException('Worktype already exists');
+			throw new BadRequestException('Тип работы уже существует');
 		}
 	}
 }

@@ -68,7 +68,7 @@ export class FirmsService {
 		login: string,
 	): Promise<IFirm> {
 		if (!_id) {
-			throw new BadRequestException('Firm _id is required');
+			return this.createFirm(updateFirm as IFirm, login);
 		}
 		const firm = await this.firmModel.findOne(
 			{
@@ -78,7 +78,7 @@ export class FirmsService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!firm) {
-			throw new NotFoundException('Firm not found');
+			throw new NotFoundException('Нет такого клиента');
 		}
 		const newFirm = {
 			...firm.toObject(),
@@ -156,7 +156,7 @@ export class FirmsService {
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
 		});
 		if (firm) {
-			throw new BadRequestException('Firm already exists');
+			throw new BadRequestException('Фирма уже существует');
 		}
 	}
 }

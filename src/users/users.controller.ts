@@ -24,15 +24,6 @@ import {
 export class UsersController {
 	constructor(private readonly usersService: UsersService) {}
 
-	@Post()
-	@Auth('admin')
-	async createUser(
-		@Body() createUserDto: IUser,
-		@Headers('auth_login') login: string,
-	): Promise<IUser> {
-		return this.usersService.createUser(createUserDto, login);
-	}
-
 	@Post('login')
 	async loginUser(@Body() loginUserDto: IUserUpdate) {
 		return this.usersService.loginUser(loginUserDto);

@@ -1,11 +1,6 @@
-import {
-	BadRequestException,
-	Injectable,
-	NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
 import { LogService } from '@/log/log.service';
 import { IFlashMessages } from '@/dto-schemas-interfaces/flashMessage.dto.schema';
@@ -53,7 +48,7 @@ export class FlashesService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!flash || flash.length === 0) {
-			throw new NotFoundException('Flash not found');
+			throw new NotFoundException('Нет такого сообщения');
 		}
 		return flash;
 	}
@@ -75,21 +70,6 @@ export class FlashesService {
 				});
 			});
 			console.log('>>> и удалили, вроде');
-		}
-	}
-
-	//-----------------------------------------------------------------------------
-	//-----------------------------------------------------------------------------
-	//                               PRIVATE METHODS
-	//-----------------------------------------------------------------------------
-	//-----------------------------------------------------------------------------
-
-	private async checkExist(title: string): Promise<void> {
-		const flash = await this.flashModel.findOne({
-			titleSlug: makeSlug(title),
-		});
-		if (flash) {
-			throw new BadRequestException('Flash already exists');
 		}
 	}
 }

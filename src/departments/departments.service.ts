@@ -35,7 +35,7 @@ export class DepartmentsService {
 	}
 
 	async createDepartment(
-		createDepartmentDto: IDepartment,
+		createDepartmentDto: IDepartmentUpdate,
 		login: string,
 	): Promise<IDepartment> {
 		await this.checkExist(createDepartmentDto.title);
@@ -79,7 +79,7 @@ export class DepartmentsService {
 		login: string,
 	): Promise<IDepartment> {
 		if (!_id) {
-			throw new BadRequestException('Department _id is required');
+			return this.createDepartment(updateDepartment, login);
 		}
 		const department = await this.departmentModel.findOne(
 			{
@@ -89,7 +89,7 @@ export class DepartmentsService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!department) {
-			throw new NotFoundException('Department not found');
+			throw new NotFoundException('Нет такого отдела');
 		}
 		const newDepartment = {
 			...department.toObject(),
@@ -168,7 +168,7 @@ export class DepartmentsService {
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
 		});
 		if (department) {
-			throw new BadRequestException('Department already exists');
+			throw new BadRequestException('Отдел уже существует');
 		}
 	}
 }
