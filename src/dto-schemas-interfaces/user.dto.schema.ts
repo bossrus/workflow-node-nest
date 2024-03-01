@@ -79,6 +79,11 @@ export class IUser {
 	@IsBoolean()
 	isSendLetterAboutNewWorks: boolean;
 
+	@Prop({ default: true })
+	@IsOptional()
+	@IsBoolean()
+	canWriteToSupport: boolean;
+
 	@Prop({ required: true })
 	@IsBoolean()
 	canStartStopWorks: boolean;

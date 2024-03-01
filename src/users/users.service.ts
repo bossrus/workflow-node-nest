@@ -212,6 +212,8 @@ export class UsersService {
 		}
 		if (updateUser.password) {
 			newUser.password = await this.hashPassword(updateUser.password);
+			newUser.loginToken = '';
+			this.usersDBService.removeToken(_id);
 		}
 
 		const savedUser = await this.userModel
@@ -257,7 +259,12 @@ export class UsersService {
 		const user = this.findUserByIdAdmin(id);
 		if (user) {
 			console.log('\tнашли пользователя');
-			this.userModel.findByIdAndUpdate(id, { isDeleted: Date.now() });
+			const deletedUser = await this.userModel.findByIdAndUpdate(
+				id,
+				{ isDeleted: Date.now() },
+				{ new: true },
+			);
+			console.log('\t>>>>\t вот он, этот пользователь', deletedUser);
 			await this.websocket.sendMessage({
 				bd: 'user',
 				operation: 'delete',

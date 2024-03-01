@@ -7,6 +7,7 @@ import {
 	Param,
 	Patch,
 	Post,
+	Redirect,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { IUser, IUserUpdate } from '@/dto-schemas-interfaces/user.dto.schema';
@@ -59,15 +60,15 @@ export class UsersController {
 	}
 
 	@Get('confirmEmail/:id/:token')
+	@Redirect()
 	async confirmEmail(
 		@Param('id', isValidIdPipe) id: string,
 		@Param('token') token: string,
-	): Promise<string> {
+	): Promise<{ url: string }> {
 		const relink = (await this.usersService.confirmEmail(id, token))
 			? CONTROL_PANEL_FRONT
 			: WRONG_EMAIL_TOKEN_PAGE;
-		//TODO подставить редирект когда буду делать фронт
-		return relink;
+		return { url: relink };
 	}
 
 	@Get(':id')
