@@ -25,7 +25,7 @@ export class InvitesService {
 		});
 		//если приходит сообщение проверить инвайт — то id — это не id инвайта, а id юзера
 		await this.websocket.sendMessage({
-			bd: 'invite',
+			bd: 'invites',
 			operation: 'update',
 			id: createInviteToJoinDto.to,
 			version: 0,

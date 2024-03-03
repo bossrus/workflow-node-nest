@@ -55,7 +55,7 @@ export class WebsocketService
 	}
 
 	async sendMessage(message: IWebsocket) {
-		if (message.bd === 'flash' || message.bd === 'invite') {
+		if (message.bd === 'flashes' || message.bd === 'invites') {
 			await this.sendMessageToUser(message);
 		} else {
 			await this.sendMessageToAnywhere(message);

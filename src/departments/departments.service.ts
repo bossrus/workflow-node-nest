@@ -43,7 +43,7 @@ export class DepartmentsService {
 		const newDepartment =
 			await this.departmentModel.create(createDepartmentDto);
 		await this.websocket.sendMessage({
-			bd: 'department',
+			bd: 'departments',
 			operation: 'update',
 			id: newDepartment._id.toString(),
 			version: newDepartment.version,
@@ -112,7 +112,7 @@ export class DepartmentsService {
 			.select(DB_IGNORE_FIELDS)
 			.lean();
 		await this.websocket.sendMessage({
-			bd: 'department',
+			bd: 'departments',
 			operation: 'update',
 			id: savedDepartment._id.toString(),
 			version: savedDepartment.version,
@@ -139,7 +139,7 @@ export class DepartmentsService {
 				isDeleted: dateOfDelete,
 			});
 			await this.websocket.sendMessage({
-				bd: 'department',
+				bd: 'departments',
 				operation: 'delete',
 				id: department._id.toString(),
 				version: department.version,

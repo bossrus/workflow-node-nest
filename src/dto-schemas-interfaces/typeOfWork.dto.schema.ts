@@ -3,7 +3,7 @@ import { IsMongoId, IsNumber, IsOptional, IsString } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 
 @Schema()
-export class IWorktype {
+export class ITypeOfWork {
 	@IsOptional()
 	@IsMongoId()
 	_id?: string;
@@ -28,6 +28,6 @@ export class IWorktype {
 	isDeleted?: number;
 }
 
-export const WorktypeSchema = SchemaFactory.createForClass(IWorktype);
+export const TypeOfWorkSchema = SchemaFactory.createForClass(ITypeOfWork);
 
-export class IWorktypeUpdate extends PartialType(IWorktype) {}
+export class ITypeOfWorkUpdate extends PartialType(ITypeOfWork) {}

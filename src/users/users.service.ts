@@ -51,7 +51,7 @@ export class UsersService {
 			createUserDto.currentDepartment = createUserDto.departments[0];
 		const newUser = await this.userModel.create(createUserDto);
 		await this.websocket.sendMessage({
-			bd: 'user',
+			bd: 'users',
 			operation: 'update',
 			id: newUser._id.toString(),
 			version: newUser.version,
@@ -236,7 +236,7 @@ export class UsersService {
 			)
 		) {
 			await this.websocket.sendMessage({
-				bd: 'user',
+				bd: 'users',
 				operation: 'update',
 				id: savedUser._id.toString(),
 				version: savedUser.version,
@@ -266,7 +266,7 @@ export class UsersService {
 			);
 			console.log('\t>>>>\t вот он, этот пользователь', deletedUser);
 			await this.websocket.sendMessage({
-				bd: 'user',
+				bd: 'users',
 				operation: 'delete',
 				id: user._id.toString(),
 				version: user.version,

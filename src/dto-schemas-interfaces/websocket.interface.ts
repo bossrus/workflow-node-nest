@@ -1,13 +1,13 @@
 export interface IWebsocket {
 	bd:
-		| 'user'
-		| 'modification'
-		| 'department'
-		| 'firm'
-		| 'invite'
-		| 'type'
-		| 'flash'
-		| 'workflow'
+		| 'workflows'
+		| 'users'
+		| 'departments'
+		| 'firms'
+		| 'modifications'
+		| 'typesOfWork'
+		| 'invites'
+		| 'flashes'
 		| 'websocket';
 	operation: 'update' | 'delete';
 	id: string;

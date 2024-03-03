@@ -22,7 +22,7 @@ export class FlashesService {
 		const newFlash = await this.flashModel.create(createFlashDto);
 		//если приходит сообщение проверить flash — то id — это не id flash, а id юзера
 		await this.websocket.sendMessage({
-			bd: 'flash',
+			bd: 'flashes',
 			operation: 'update',
 			id: createFlashDto.to,
 			version: 0,

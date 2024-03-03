@@ -32,7 +32,7 @@ export class FirmsService {
 		createFirmDto.titleSlug = makeSlug(createFirmDto.title);
 		const newFirm = await this.firmModel.create(createFirmDto);
 		await this.websocket.sendMessage({
-			bd: 'firm',
+			bd: 'firms',
 			operation: 'update',
 			id: newFirm._id.toString(),
 			version: newFirm.version,
@@ -101,7 +101,7 @@ export class FirmsService {
 			.select(DB_IGNORE_FIELDS)
 			.lean();
 		await this.websocket.sendMessage({
-			bd: 'firm',
+			bd: 'firms',
 			operation: 'update',
 			id: savedFirm._id.toString(),
 			version: savedFirm.version,
@@ -128,7 +128,7 @@ export class FirmsService {
 				isDeleted: dateOfDelete,
 			});
 			await this.websocket.sendMessage({
-				bd: 'firm',
+				bd: 'firms',
 				operation: 'delete',
 				id: firm._id.toString(),
 				version: firm.version,

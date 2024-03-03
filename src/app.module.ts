@@ -9,9 +9,10 @@ import { UsersModule } from '@/users/users.module';
 import { ModificationsModule } from '@/modifications/modifications.module';
 import { FirmsModule } from '@/firms/firms.module';
 import { LogModule } from '@/log/log.module';
-import { WorktypesModule } from '@/worktypes/worktypes.module';
+import { TypesOfWorkModule } from '@/typesOfWork/typesOfWork.module';
 import { InvitesModule } from '@/invites/invites.module';
 import { FlashesModule } from '@/flashes/flashes.module';
+import { WorkflowsModule } from '@/workflows/workflows.module';
 
 @Module({
 	imports: [
@@ -22,9 +23,10 @@ import { FlashesModule } from '@/flashes/flashes.module';
 		DepartmentsModule,
 		ModificationsModule,
 		FirmsModule,
-		WorktypesModule,
+		TypesOfWorkModule,
 		InvitesModule,
 		FlashesModule,
+		WorkflowsModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

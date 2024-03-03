@@ -3,7 +3,7 @@ import { UsersDBService } from '@/BD/usersDB.service';
 import { Global, Module } from '@nestjs/common';
 import { ModificationsDBService } from '@/BD/modificationsDB.service';
 import { FirmsDBService } from '@/BD/firmsDB.service';
-import { WorktypesDBService } from '@/BD/worktypesDB.service';
+import { TypesOfWorkDBService } from '@/BD/typesOfWorkDB.service';
 
 @Global()
 @Module({
@@ -12,14 +12,14 @@ import { WorktypesDBService } from '@/BD/worktypesDB.service';
 		UsersDBService,
 		ModificationsDBService,
 		FirmsDBService,
-		WorktypesDBService,
+		TypesOfWorkDBService,
 	],
 	exports: [
 		DepartmentsDBService,
 		UsersDBService,
 		ModificationsDBService,
 		FirmsDBService,
-		WorktypesDBService,
+		TypesOfWorkDBService,
 	],
 })
 export class DbModule {}

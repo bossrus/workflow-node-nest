@@ -44,7 +44,7 @@ export class ModificationsService {
 			createModificationDto,
 		);
 		await this.websocket.sendMessage({
-			bd: 'modification',
+			bd: 'modifications',
 			operation: 'update',
 			id: newModification._id.toString(),
 			version: newModification.version,
@@ -116,7 +116,7 @@ export class ModificationsService {
 			.select(DB_IGNORE_FIELDS)
 			.lean();
 		await this.websocket.sendMessage({
-			bd: 'modification',
+			bd: 'modifications',
 			operation: 'update',
 			id: savedModification._id.toString(),
 			version: savedModification.version,
@@ -142,7 +142,7 @@ export class ModificationsService {
 				isDeleted: Date.now(),
 			});
 			await this.websocket.sendMessage({
-				bd: 'modification',
+				bd: 'modifications',
 				operation: 'delete',
 				id: modification._id.toString(),
 				version: modification.version,

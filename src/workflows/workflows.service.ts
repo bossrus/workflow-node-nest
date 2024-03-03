@@ -1,3 +1,4 @@
+//src/workflows/workflows.service.ts
 import {
 	BadRequestException,
 	Injectable,
@@ -55,7 +56,7 @@ export class WorkflowsService {
 		);
 		const newWorkflow = await this.workflowModel.create(createWorkflowDto);
 		await this.websocket.sendMessage({
-			bd: 'workflow',
+			bd: 'workflows',
 			operation: 'update',
 			id: newWorkflow._id.toString(),
 			version: newWorkflow.version,
@@ -159,7 +160,7 @@ export class WorkflowsService {
 			)
 		) {
 			await this.websocket.sendMessage({
-				bd: 'workflow',
+				bd: 'workflows',
 				operation: 'update',
 				id: savedWorkflow._id.toString(),
 				version: savedWorkflow.version,
@@ -416,7 +417,7 @@ export class WorkflowsService {
 			workflow.isDeleted = Date.now();
 			await workflow.save();
 			await this.websocket.sendMessage({
-				bd: 'workflow',
+				bd: 'workflows',
 				operation: 'delete',
 				id: workflow._id.toString(),
 				version: workflow.version,

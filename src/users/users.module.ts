@@ -23,5 +23,6 @@ import { LogModule } from '@/log/log.module';
 	],
 	controllers: [UsersController],
 	providers: [UsersService],
+	exports: [UsersService],
 })
 export class UsersModule {}
