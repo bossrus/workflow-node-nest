@@ -10,7 +10,7 @@ import {
 	IWorkflowUpdate,
 } from '@/dto-schemas-interfaces/workflow.dto.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import makeSlug from '@/services/makeSlug';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
 import { LogService } from '@/log/log.service';
@@ -48,12 +48,17 @@ export class WorkflowsService {
 		login: string,
 	): Promise<IWorkflow> {
 		createWorkflowDto.titleSlug = makeSlug(createWorkflowDto.title);
-		await this.checkExist(
-			createWorkflowDto.title,
-			createWorkflowDto.titleSlug,
-			createWorkflowDto.firm,
-			createWorkflowDto.modification,
-		);
+		console.log('проверка', createWorkflowDto);
+		if (!createWorkflowDto.mainId) {
+			await this.checkExist(
+				createWorkflowDto.title,
+				createWorkflowDto.titleSlug,
+				createWorkflowDto.firm,
+				createWorkflowDto.modification,
+			);
+		}
+		console.log('\t после проверки');
+		createWorkflowDto.whoAddThisWorkflow = login;
 		const newWorkflow = await this.workflowModel.create(createWorkflowDto);
 		await this.websocket.sendMessage({
 			bd: 'workflows',
@@ -69,14 +74,37 @@ export class WorkflowsService {
 			idWorker: login,
 			idSubject: newWorkflow._id.toString(),
 		});
+		console.log('при создании воркфлоу id = ', newWorkflow._id);
 		return newWorkflow;
 	}
 
-	async findAllWorkflows(): Promise<IWorkflow[]> {
-		return this.workflowModel.find(
+	async findAllWorkflows(): Promise<IWorkflowsObject> {
+		const resultArr = await this.workflowModel.find(
 			{ isDeleted: null, isDone: null },
 			DB_IGNORE_FIELDS,
 		);
+		const result: IWorkflowsObject = {};
+		resultArr.forEach((workflow) => {
+			result[workflow._id] = workflow;
+		});
+		return result;
+	}
+
+	async findAllWorkflowsInThisModification({
+		firm,
+		modification,
+	}: IWorkflowUpdate): Promise<IWorkflow[]> {
+		const result = await this.workflowModel.find(
+			{
+				$expr: { $eq: [{ $toString: '$_id' }, '$mainId'] },
+				firm: firm,
+				modification: modification,
+				isDeleted: null,
+			},
+			'_id title',
+		);
+		console.log('\tрезультат поиска в модификации', result);
+		return result;
 	}
 
 	async findWorkflowById(id: string): Promise<IWorkflow> {
@@ -116,6 +144,7 @@ export class WorkflowsService {
 			...updateWorkflow,
 			version: workflow.version + 1,
 		};
+		console.log('проверка', newWorkflow);
 		if (updateWorkflow.title) {
 			const firm = updateWorkflow.firm || workflow.firm;
 			const modification =
@@ -126,6 +155,7 @@ export class WorkflowsService {
 				newWorkflow.titleSlug,
 				firm,
 				modification,
+				workflow._id,
 			);
 		}
 
@@ -414,6 +444,8 @@ export class WorkflowsService {
 		console.log(workflow, '\nпришли удалять workflow');
 		if (workflow) {
 			console.log('>>> и удалили, вроде');
+			workflow.title = workflow.title + Date.now().toString();
+			workflow.titleSlug = workflow.titleSlug + Date.now().toString();
 			workflow.isDeleted = Date.now();
 			await workflow.save();
 			await this.websocket.sendMessage({
@@ -506,17 +538,41 @@ export class WorkflowsService {
 		titleSlug: string,
 		firm: string,
 		modification: string,
+		id?: string,
 	): Promise<void> {
-		const workflow = await this.workflowModel.findOne({
-			$and: [
-				{
-					$or: [{ titleSlug }, { title }],
+		const workflows = await this.workflowModel.aggregate([
+			{
+				$match: {
+					$and: [
+						{
+							$or: [{ titleSlug }, { title }],
+						},
+						{ firm },
+						{ modification },
+					],
 				},
-				{ firm },
-				{ modification },
-			],
-		});
-		if (workflow) {
+			},
+			{
+				$addFields: {
+					isSameMainId: { $eq: ['$_id', '$mainId'] },
+					isNotSameId: {
+						$ne: [
+							'$_id',
+							new Types.ObjectId(
+								id || '000000000000000000000000',
+							),
+						],
+					},
+				},
+			},
+			{
+				$match: {
+					$and: [{ isSameMainId: true }, { isNotSameId: true }],
+				},
+			},
+		]);
+
+		if (workflows.length > 0) {
 			throw new BadRequestException('Такая работа уже существует');
 		}
 	}

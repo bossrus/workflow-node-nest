@@ -6,10 +6,12 @@ import {
 	Headers,
 	Param,
 	Patch,
+	Post,
 } from '@nestjs/common';
 import { WorkflowsService } from './workflows.service';
 import {
 	IWorkflow,
+	IWorkflowsObject,
 	IWorkflowUpdate,
 } from '@/dto-schemas-interfaces/workflow.dto.schema';
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
@@ -22,8 +24,19 @@ export class WorkflowsController {
 
 	@Get()
 	@Auth()
-	async findAllWorkflows(): Promise<IWorkflow[]> {
+	async findAllWorkflows(): Promise<IWorkflowsObject> {
 		return this.workflowsService.findAllWorkflows();
+	}
+
+	@Post('in_this_modification')
+	@Auth('startStop')
+	async findAllWorkflowsInThisModification(
+		@Body() { firm, modification }: IWorkflowUpdate,
+	): Promise<IWorkflow[]> {
+		return this.workflowsService.findAllWorkflowsInThisModification({
+			firm,
+			modification,
+		});
 	}
 
 	@Get(':id')

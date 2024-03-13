@@ -20,11 +20,11 @@ export class IWorkflow {
 	@IsOptional()
 	mainId?: string;
 
-	@Prop({ unique: true, required: true })
+	@Prop({ required: true })
 	@IsString()
 	title: string;
 
-	@Prop({ unique: true })
+	@Prop()
 	@IsString()
 	@IsOptional()
 	titleSlug: string;
@@ -111,7 +111,7 @@ export class IWorkflowUpdate extends PartialType(IWorkflow) {}
 
 WorkflowSchema.pre('save', function (next) {
 	if (!this.mainId) {
-		this.mainId = this._id;
+		this.mainId = this._id.toString();
 	}
 	next();
 });
