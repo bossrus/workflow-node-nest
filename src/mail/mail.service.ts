@@ -65,6 +65,7 @@ export class MailService {
 		mailListByDepartments: IMailListByDepartments,
 	) {
 		console.log('отправка писем publish');
+		console.log('mailListByDepartments = ', mailListByDepartments);
 		for (const departmentTitle in mailListByDepartments) {
 			const recipients: IEmailRecipient[] =
 				this.userDBService.getEmailRecipients(
@@ -78,12 +79,23 @@ export class MailService {
 					departmentTitle
 				].mailList) {
 					letter += `В ${mailListByDepartments[departmentTitle].mailList[modificationAndFirm].firmTitle} (№ ${mailListByDepartments[departmentTitle].mailList[modificationAndFirm].modificationTitle}):\n`;
+					console.log(
+						'проверяем mailListByDepartments[departmentTitle] = ',
+						mailListByDepartments[departmentTitle],
+					);
+					console.log('modificationAndFirm = ', modificationAndFirm);
+					console.log(
+						'\tитого ',
+						mailListByDepartments[departmentTitle].mailList[
+							modificationAndFirm
+						],
+					);
 					count +=
-						mailListByDepartments[departmentTitle][
+						mailListByDepartments[departmentTitle].mailList[
 							modificationAndFirm
 						].titles.length;
 					letter +=
-						mailListByDepartments[departmentTitle][
+						mailListByDepartments[departmentTitle].mailList[
 							modificationAndFirm
 						].titles.join('\n');
 				}
