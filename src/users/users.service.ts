@@ -162,7 +162,7 @@ export class UsersService {
 			},
 		);
 		if (user) {
-			await this.updateUser(
+			const savedUser = await this.updateUser(
 				{
 					_id: _id.toString(),
 					...updateUser,
@@ -177,9 +177,8 @@ export class UsersService {
 				idWorker: login,
 				idSubject: _id,
 			});
-			return true;
+			return savedUser;
 		}
-		return false;
 	}
 
 	async updateUser(

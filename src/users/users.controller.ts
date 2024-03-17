@@ -111,7 +111,7 @@ export class UsersController {
 	async updateMe(
 		@Body() updateUserDto: IUserUpdate,
 		@Headers('auth_login') login: string,
-	): Promise<boolean> {
+	): Promise<IUser> {
 		return this.usersService.updateMe(updateUserDto, login);
 	}
 
