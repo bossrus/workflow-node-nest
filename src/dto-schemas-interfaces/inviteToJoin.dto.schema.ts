@@ -26,4 +26,8 @@ export class IInviteToJoin {
 	isDeleted?: number;
 }
 
+export interface IInvitesObject {
+	[key: string]: IInviteToJoin;
+}
+
 export const InviteToJoinSchema = SchemaFactory.createForClass(IInviteToJoin);

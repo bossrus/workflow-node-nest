@@ -319,14 +319,36 @@ export class WorkflowsService {
 		return undefined;
 	}
 
-	async addToDescription(id: string, text: string, login: string) {
-		const workflow = await this.findWorkflowById(id);
-		const newDescription =
-			workflow.description +
-			'\n-----------------\n' +
+	createNewDescription(description: string, newInfo: string, login: string) {
+		const currentDate = new Date();
+		const formattedDate = currentDate
+			.toLocaleString('ru-RU', {
+				day: '2-digit',
+				month: '2-digit',
+				year: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit',
+				hourCycle: 'h24', // для 24-часового формата времени
+			})
+			.replace(/\//g, '.'); // заменяем / на .
+		return (
+			description +
+			'\n\n>>> ' +
 			this.usersDBService.getName(login) +
-			` (${Date.now()}):\n` +
-			text;
+			` (${formattedDate}):\n  ` +
+			newInfo
+		);
+	}
+
+	async addToDescription(id: string, textin_param, login: string) {
+		const text = textin_param.text;
+		console.log('\n', text, '\n');
+		const workflow = await this.findWorkflowById(id);
+		const newDescription = this.createNewDescription(
+			workflow.description,
+			text,
+			login,
+		);
 		const newWorkflow = await this.updateWorkflow(
 			{
 				_id: id,
@@ -353,10 +375,16 @@ export class WorkflowsService {
 				throw new BadRequestException('Вы уже делаете эту работу');
 			}
 			const newExecutors = workflow.executors.concat(login);
+			const newDescription = this.createNewDescription(
+				workflow.description,
+				'Начал работу',
+				login,
+			);
 			await this.updateWorkflow(
 				{
 					_id: id,
 					executors: newExecutors,
+					description: newDescription,
 				},
 				login,
 			);
@@ -384,17 +412,29 @@ export class WorkflowsService {
 
 	async closeWork(id: string, login: string, newDepartment?: string) {
 		if (
-			newDepartment !== '9999' &&
 			newDepartment &&
+			newDepartment !== 'closeWork' &&
+			newDepartment !== 'justClose' &&
 			!isValidMongodbId(newDepartment)
 		)
 			throw new BadRequestException('Неверный ID работы');
 		const workflow = await this.findWorkflowById(id);
-		let result =
-			workflow.currentDepartment === newDepartment
-				? 'Оставлен в том же отделе'
-				: `Передав в отдел "${this.departmentsDBService.getTitle(newDepartment)}"`;
-		if (newDepartment === '9999') result = 'Работа закончена';
+
+		let result = '';
+		switch (true) {
+			case workflow.currentDepartment === newDepartment:
+				result = 'Заказ закрыт, но оставлен в том же отделе';
+				break;
+			case newDepartment === 'closeWork':
+				result = 'Работа закончена';
+				break;
+			case newDepartment === 'justClose':
+				result = 'Закончил свою часть работы';
+				break;
+			case newDepartment !== 'closeWork' && newDepartment !== 'justClose':
+				result = `Передан в отдел "${this.departmentsDBService.getTitle(newDepartment)}"`;
+				break;
+		}
 
 		if (!workflow.executors.includes(login)) {
 			throw new BadRequestException('Вы не делаете эту работу');
@@ -402,30 +442,44 @@ export class WorkflowsService {
 		const newExecutors = workflow.executors.filter(
 			(item) => item !== login,
 		);
+		const newDescription = this.createNewDescription(
+			workflow.description,
+			result,
+			login,
+		);
 		const workflowUpdateFields: IWorkflowUpdate = {
 			_id: id,
 			executors: newExecutors,
+			description: newDescription,
 		};
-		if (result !== 'Оставлен в том же отделе') {
+		if (
+			result !== 'Заказ закрыт, но оставлен в том же отделе' &&
+			result !== 'Закончил свою часть работы' &&
+			result !== 'Работа закончена'
+		) {
 			workflowUpdateFields.currentDepartment = newDepartment;
 		}
-		if (newDepartment === '9999') {
+		if (newDepartment === 'closeWork') {
 			workflowUpdateFields.isDone = Date.now();
 		}
 		const newWorkflow = await this.updateWorkflow(
 			workflowUpdateFields,
 			login,
 		);
-		const user = this.usersDBService.getById(login);
-		if (user.currentWorkflowInWork === id) {
-			await this.userService.updateUser(
-				{
-					_id: login,
-					currentWorkflowInWork: null,
-				},
-				login,
-			);
-		}
+		await this.userService.updateUser(
+			{
+				_id: login,
+				currentWorkflowInWork: null,
+			},
+			login,
+		);
+
+		await this.websocket.sendMessage({
+			bd: 'users',
+			operation: 'update',
+			id: login,
+			version: -1,
+		});
 
 		await this.logService.saveToLog({
 			bd: 'workflow',

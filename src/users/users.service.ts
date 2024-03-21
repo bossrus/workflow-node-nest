@@ -260,7 +260,11 @@ export class UsersService {
 			console.log('\tнашли пользователя');
 			const deletedUser = await this.userModel.findByIdAndUpdate(
 				id,
-				{ isDeleted: Date.now() },
+				{
+					isDeleted: Date.now(),
+					login: user.login + '>' + Date.now(),
+					loginSlug: user.loginSlug + '>' + Date.now(),
+				},
 				{ new: true },
 			);
 			console.log('\t>>>>\t вот он, этот пользователь', deletedUser);

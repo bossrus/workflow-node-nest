@@ -96,11 +96,20 @@ export class WorkflowsController {
 	@Patch('close/:id')
 	@Auth()
 	async closeWork(
-		@Body() newDepartment: string,
+		@Body() newDepartment: Record<string, string>,
 		@Param('id', isValidIdPipe) id: string,
 		@Headers('auth_login') login: string,
 	): Promise<IWorkflow> {
-		return this.workflowsService.closeWork(id, login, newDepartment);
+		console.log(
+			'получен newDepartment',
+			newDepartment.newDepartment,
+			typeof newDepartment,
+		);
+		return this.workflowsService.closeWork(
+			id,
+			login,
+			newDepartment.newDepartment,
+		);
 	}
 
 	@Delete(':id')

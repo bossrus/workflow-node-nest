@@ -1,5 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { IInviteToJoin } from '@/dto-schemas-interfaces/inviteToJoin.dto.schema';
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
+import {
+	IInvitesObject,
+	IInviteToJoin,
+} from '@/dto-schemas-interfaces/inviteToJoin.dto.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
@@ -42,7 +49,7 @@ export class InvitesService {
 	}
 
 	//ищем по адресату, а не по номеру приглашения
-	async findInviteToJoinById(id: string): Promise<IInviteToJoin[]> {
+	async findInviteToJoinById(id: string): Promise<IInvitesObject> {
 		const inviteToJoin = await this.inviteToJoinModel.find(
 			{
 				to: id,
@@ -51,9 +58,15 @@ export class InvitesService {
 			DB_IGNORE_FIELDS,
 		);
 		if (!inviteToJoin || inviteToJoin.length === 0) {
-			throw new NotFoundException('Такого приглашения не существует');
+			throw new NotFoundException(
+				'Приглашений для данного субъекта не существует',
+			);
 		}
-		return inviteToJoin;
+		const data: IInvitesObject = {};
+		inviteToJoin.forEach((invite) => {
+			data[invite._id] = invite;
+		});
+		return data;
 	}
 
 	//удаляем по номеру приглашения, а не по адресату
@@ -72,6 +85,15 @@ export class InvitesService {
 				idWorker: login,
 				idSubject: inviteToJoin._id.toString(),
 			});
+		}
+	}
+
+	async clearInvitesToJoin(login: string): Promise<void> {
+		const invitesToJoin = await this.inviteToJoinModel.find({ to: login });
+		if (invitesToJoin.length > 0) {
+			for (const invite of invitesToJoin) {
+				await this.deleteInviteToJoin(invite._id, login);
+			}
 		}
 	}
 }

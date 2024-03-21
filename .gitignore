@@ -3,7 +3,6 @@
 /node_modules
 /.localcert
 /client
-/src/consts
 /test
 
 # Logs
@@ -37,3 +36,6 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# secret fields
+/src/consts/email.ts

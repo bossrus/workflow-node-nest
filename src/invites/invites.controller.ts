@@ -8,7 +8,10 @@ import {
 	Post,
 } from '@nestjs/common';
 import { InvitesService } from './invites.service';
-import { IInviteToJoin } from '@/dto-schemas-interfaces/inviteToJoin.dto.schema';
+import {
+	IInvitesObject,
+	IInviteToJoin,
+} from '@/dto-schemas-interfaces/inviteToJoin.dto.schema';
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import { Auth } from '@/services/auth';
 
@@ -32,7 +35,7 @@ export class InvitesController {
 	@Auth()
 	async findInviteToJoinById(
 		@Headers('auth_login') id: string,
-	): Promise<IInviteToJoin[]> {
+	): Promise<IInvitesObject> {
 		return this.inviteToJoinsService.findInviteToJoinById(id);
 	}
 
@@ -43,5 +46,13 @@ export class InvitesController {
 		@Headers('auth_login') login: string,
 	): Promise<void> {
 		return this.inviteToJoinsService.deleteInviteToJoin(id, login);
+	}
+
+	@Delete()
+	@Auth()
+	async clearInvitesToJoin(
+		@Headers('auth_login') login: string,
+	): Promise<void> {
+		return this.inviteToJoinsService.clearInvitesToJoin(login);
 	}
 }
