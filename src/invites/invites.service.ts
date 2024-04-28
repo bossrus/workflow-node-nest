@@ -12,6 +12,7 @@ import { Model } from 'mongoose';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
 import { LogService } from '@/log/log.service';
 import { WebsocketService } from '@/websockets/websocket.service';
+import { UsersDBService } from '@/BD/usersDB.service';
 
 @Injectable()
 export class InvitesService {
@@ -20,15 +21,18 @@ export class InvitesService {
 		private inviteToJoinModel: Model<IInviteToJoin>,
 		private websocket: WebsocketService,
 		private logService: LogService,
+		private usersDBService: UsersDBService,
 	) {}
 
 	async createInviteToJoin(
 		createInviteToJoinDto: IInviteToJoin,
 		login: string,
 	): Promise<IInviteToJoin> {
+		const user = this.usersDBService.getById(login);
 		const newInviteToJoin = await this.inviteToJoinModel.create({
 			...createInviteToJoinDto,
 			from: login,
+			department: user.currentDepartment,
 		});
 		//если приходит сообщение проверить инвайт — то id — это не id инвайта, а id юзера
 		await this.websocket.sendMessage({

@@ -20,6 +20,11 @@ export class IInviteToJoin {
 	@IsMongoId()
 	workflow: string;
 
+	@Prop()
+	@IsMongoId()
+	@IsOptional()
+	department?: string;
+
 	@Prop({ default: undefined })
 	@IsNumber()
 	@IsOptional()

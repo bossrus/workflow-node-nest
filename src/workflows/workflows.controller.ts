@@ -17,6 +17,7 @@ import {
 import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import Auth from '@/services/auth';
 import { IMongoIdArray } from '@/dto-schemas-interfaces/mongoIds.dto.schema';
+import { IStatParameters } from '@/dto-schemas-interfaces/statistic.interface';
 
 @Controller('workflows')
 export class WorkflowsController {
@@ -110,6 +111,16 @@ export class WorkflowsController {
 			login,
 			newDepartment.newDepartment,
 		);
+	}
+
+	// ): Promise<IWorkflow> {
+	@Post('stat/:id?')
+	@Auth('seeStatistic')
+	async showStatistic(
+		@Body() statParameters: IStatParameters,
+		@Param('id', isValidIdPipe) id: string,
+	) {
+		return this.workflowsService.showStatistic(statParameters, id);
 	}
 
 	@Delete(':id')

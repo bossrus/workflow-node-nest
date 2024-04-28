@@ -27,6 +27,7 @@ import { UsersDBService } from '@/BD/usersDB.service';
 import { UsersService } from '@/users/users.service';
 import { isValidMongodbId } from '@/services/_mongodb_id_valiator';
 import { IMongoIdArray } from '@/dto-schemas-interfaces/mongoIds.dto.schema';
+import { IStatParameters } from '@/dto-schemas-interfaces/statistic.interface';
 
 @Injectable()
 export class WorkflowsService {
@@ -191,7 +192,7 @@ export class WorkflowsService {
 		) {
 			await this.websocket.sendMessage({
 				bd: 'workflows',
-				operation: 'update',
+				operation: updateWorkflow.isDone ? 'delete' : 'update',
 				id: savedWorkflow._id.toString(),
 				version: savedWorkflow.version,
 			});
@@ -579,6 +580,62 @@ export class WorkflowsService {
 			};
 		}
 		return mailList;
+	}
+
+	getListForStat(statParameters: IStatParameters): Promise<IWorkflow[]> {
+		const query: any = {
+			isDeleted: null, // Assuming you want to exclude deleted workflows
+		};
+
+		// Adding firm and modification to the query if they are provided
+		if (statParameters.firm) {
+			query.firm = statParameters.firm;
+		}
+		if (statParameters.modification) {
+			query.modification = statParameters.modification;
+		}
+
+		// Handling date range
+		if (statParameters.dateFrom && statParameters.dateTo) {
+			query.isPublished = {
+				$gte: statParameters.dateFrom,
+				$lte: statParameters.dateTo,
+			};
+		}
+
+		if (statParameters.showChecked && !statParameters.showUnchecked) {
+			query.isCheckedOnStat = true;
+		} else if (
+			!statParameters.showChecked &&
+			statParameters.showUnchecked
+		) {
+			query.$or = [
+				{ isCheckedOnStat: false },
+				{ isCheckedOnStat: { $exists: false } },
+			];
+		}
+
+		console.log('запрос = ', query);
+
+		return this.workflowModel.find(query);
+	}
+
+	getWorkflowDetails(id: string): Promise<IWorkflow[]> {
+		const query: any = {
+			isDeleted: null,
+			mainId: id,
+		};
+
+		console.log('запрос = ', query);
+
+		return this.workflowModel.find(query);
+	}
+
+	showStatistic(statParameters: IStatParameters, id: string) {
+		console.log('\ni = ', id, '\nstatParameters:', statParameters);
+		return id != undefined
+			? this.getWorkflowDetails(id)
+			: this.getListForStat(statParameters);
 	}
 
 	//-----------------------------------------------------------------------------
