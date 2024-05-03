@@ -1,16 +1,16 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import Auth from '@/services/auth';
-import { isValidIdPipe } from '@/services/_mongodb_id_valiator';
 import { LogService } from '@/log/log.service';
-import { ILog } from '@/dto-schemas-interfaces/log.dto.schema';
+import { ILogObject } from '@/dto-schemas-interfaces/log.dto.schema';
+import { IMongoIdArray } from '@/dto-schemas-interfaces/mongoIds.dto.schema';
 
 @Controller('log')
 export class LogController {
 	constructor(private readonly logService: LogService) {}
 
-	@Get(':id')
+	@Post('')
 	@Auth()
-	async getLogById(@Param('id', isValidIdPipe) id: string): Promise<ILog[]> {
-		return this.logService.getLogById(id);
+	async getLogById(@Body() workflowIds: IMongoIdArray): Promise<ILogObject> {
+		return this.logService.getLogById(workflowIds);
 	}
 }

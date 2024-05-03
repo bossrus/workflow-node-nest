@@ -421,19 +421,24 @@ export class WorkflowsService {
 			throw new BadRequestException('Неверный ID работы');
 		const workflow = await this.findWorkflowById(id);
 
+		const DONE_WORK_BUT_NOT_CHANGE_DEPARTMENT =
+			'Работа завершена, но заказ оставлен в том же отделе';
+		const DONE_HALF_WORK = 'Работа над своей частью заказа завершена';
+		const WORK_CLOSE = 'Заказ закрыт';
+
 		let result = '';
 		switch (true) {
 			case workflow.currentDepartment === newDepartment:
-				result = 'Заказ закрыт, но оставлен в том же отделе';
+				result = DONE_WORK_BUT_NOT_CHANGE_DEPARTMENT;
 				break;
 			case newDepartment === 'closeWork':
-				result = 'Работа закончена';
+				result = WORK_CLOSE;
 				break;
 			case newDepartment === 'justClose':
-				result = 'Закончил свою часть работы';
+				result = DONE_HALF_WORK;
 				break;
 			case newDepartment !== 'closeWork' && newDepartment !== 'justClose':
-				result = `Передан в отдел "${this.departmentsDBService.getTitle(newDepartment)}"`;
+				result = `Работа завершена и заказ передан в отдел "${this.departmentsDBService.getTitle(newDepartment)}"`;
 				break;
 		}
 
@@ -454,9 +459,9 @@ export class WorkflowsService {
 			description: newDescription,
 		};
 		if (
-			result !== 'Заказ закрыт, но оставлен в том же отделе' &&
-			result !== 'Закончил свою часть работы' &&
-			result !== 'Работа закончена'
+			result !== DONE_WORK_BUT_NOT_CHANGE_DEPARTMENT &&
+			result !== DONE_HALF_WORK &&
+			result !== WORK_CLOSE
 		) {
 			workflowUpdateFields.currentDepartment = newDepartment;
 		}

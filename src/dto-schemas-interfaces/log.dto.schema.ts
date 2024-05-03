@@ -77,3 +77,7 @@ export class ILog {
 }
 
 export const LogSchema = SchemaFactory.createForClass(ILog);
+
+export interface ILogObject {
+	[key: string]: ILog[];
+}
