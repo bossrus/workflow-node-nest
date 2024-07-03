@@ -140,6 +140,9 @@ export class UsersService {
 				});
 				return true;
 			}
+		} else {
+			await this.clearEmail(_id);
+			return true;
 		}
 		return false;
 	}
@@ -169,14 +172,24 @@ export class UsersService {
 				},
 				login,
 			);
-			await this.logService.saveToLog({
-				bd: 'user',
-				date: Date.now(),
-				description: 'add email',
-				operation: 'edit',
-				idWorker: login,
-				idSubject: _id,
-			});
+			this.websocket
+				.sendMessage({
+					bd: 'users',
+					operation: 'update',
+					id: savedUser._id.toString(),
+					version: savedUser.version,
+				})
+				.then();
+			this.logService
+				.saveToLog({
+					bd: 'user',
+					date: Date.now(),
+					description: 'update me',
+					operation: 'edit',
+					idWorker: login,
+					idSubject: _id,
+				})
+				.then();
 			return savedUser;
 		}
 	}
@@ -327,6 +340,23 @@ export class UsersService {
 				emailConfirmed: true,
 			};
 			await this.updateUser(user, id, ' confirm email');
+		}
+		return result;
+	}
+
+	async clearEmail(id: string) {
+		const result = await this.userModel.findOne({
+			_id: id,
+		});
+		if (result) {
+			const user: IUserUpdate = {
+				_id: id,
+				emailConfirmed: false,
+				isSendLetterAboutNewWorks: false,
+				emailToken: '',
+				email: '',
+			};
+			await this.updateUser(user, id, ' clear email');
 		}
 		return result;
 	}

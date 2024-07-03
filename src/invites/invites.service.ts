@@ -61,11 +61,11 @@ export class InvitesService {
 			},
 			DB_IGNORE_FIELDS,
 		);
-		if (!inviteToJoin || inviteToJoin.length === 0) {
-			throw new NotFoundException(
-				'Приглашений для данного субъекта не существует',
-			);
-		}
+		// if (!inviteToJoin || inviteToJoin.length === 0) {
+		// 	throw new NotFoundException(
+		// 		'Приглашений для данного субъекта не существует',
+		// 	);
+		// }
 		const data: IInvitesObject = {};
 		inviteToJoin.forEach((invite) => {
 			data[invite._id] = invite;

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DB_IGNORE_FIELDS } from '@/consts/db';
@@ -40,17 +40,16 @@ export class FlashesService {
 	}
 
 	async findFlashById(id: string): Promise<IFlashMessages[]> {
-		const flash = await this.flashModel.find(
+		// if (!flash || flash.length === 0) {
+		// 	throw new NotFoundException('Нет такого сообщения');
+		// }
+		return this.flashModel.find(
 			{
 				to: id,
 				isDeleted: null,
 			},
 			DB_IGNORE_FIELDS,
 		);
-		if (!flash || flash.length === 0) {
-			throw new NotFoundException('Нет такого сообщения');
-		}
-		return flash;
 	}
 
 	async deleteFlash(login: string): Promise<void> {

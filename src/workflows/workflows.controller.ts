@@ -62,7 +62,7 @@ export class WorkflowsController {
 	async publishWorkflow(
 		@Body() workflowIds: IMongoIdArray,
 		@Headers('auth_login') login: string,
-	): Promise<IWorkflow> {
+	): Promise<string> {
 		return this.workflowsService.publishWorkflow(workflowIds, login);
 	}
 
@@ -71,8 +71,8 @@ export class WorkflowsController {
 	async checkedWorkflow(
 		@Body() workflowIds: IMongoIdArray,
 		@Headers('auth_login') login: string,
-	): Promise<IWorkflow> {
-		return this.workflowsService.publishWorkflow(workflowIds, login);
+	): Promise<string> {
+		return this.workflowsService.checkedWorkflow(workflowIds, login);
 	}
 
 	@Patch('description/:id')

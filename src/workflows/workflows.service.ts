@@ -230,14 +230,28 @@ export class WorkflowsService {
 				isPublished: null,
 			})
 			.sort('currentDepartment');
-		// вспомогательный объект с ключами полей = _id
-		const workflowLookup: IWorkflowsObject = workflows.reduce(
-			(acc, workflow) => {
-				acc[workflow._id] = workflow;
-				return acc;
-			},
-			{},
-		);
+
+		const workflowLookup: IWorkflowsObject = {};
+
+		for (const wrk of workflows) {
+			const workflow = await this.updateWorkflow(
+				{
+					_id: wrk._id,
+					isPublished: Date.now(),
+				},
+				login,
+			);
+			workflowLookup[workflow._id] = workflow;
+			await this.logService.saveToLog({
+				bd: 'workflow',
+				date: Date.now(),
+				description: '',
+				operation: 'publish',
+				idWorker: login,
+				idSubject: workflow._id.toString(),
+			});
+		}
+
 		const workflowsByModificationAndFirms: IMailListByDepartments = {};
 		let workflowIDs: string[] = [];
 		let oldDepartmentId: string = workflows[0].currentDepartment;
@@ -268,38 +282,20 @@ export class WorkflowsService {
 				mailList: this.getMailList(workflowIDs, workflowLookup),
 			};
 		}
-		await this.mailService.sendEmailNotificationPublish(
+		//тут не должно быть евейта! мы не ждём, когда пройдёт оповещение по почте.
+		this.mailService.sendEmailNotificationPublish(
 			workflowsByModificationAndFirms,
 		);
-		for (const id of workflowIDs) {
-			const workflow = await this.updateWorkflow(
-				{
-					_id: id,
-					isPublished: Date.now(),
-				},
-				login,
-			);
-			await this.logService.saveToLog({
-				bd: 'workflow',
-				date: Date.now(),
-				description: '',
-				operation: 'publish',
-				idWorker: login,
-				idSubject: workflow._id.toString(),
-			});
-		}
-		return undefined;
+
+		return 'publish done';
 	}
 
 	async checkedWorkflow({ ids }: IMongoIdArray, login: string) {
-		const workflows = await this.workflowModel
-			.find({
-				_id: { $in: ids },
-				isDeleted: null,
-				isDone: null,
-				isPublished: null,
-			})
-			.sort('currentDepartment');
+		const workflows = await this.workflowModel.find({
+			_id: { $in: ids },
+			isDeleted: null,
+			isPublished: { $ne: null },
+		});
 		for (const work of workflows) {
 			const workflow = await this.updateWorkflow(
 				{
@@ -317,7 +313,7 @@ export class WorkflowsService {
 				idSubject: workflow._id.toString(),
 			});
 		}
-		return undefined;
+		return 'checked done';
 	}
 
 	createNewDescription(description: string, newInfo: string, login: string) {
@@ -373,7 +369,7 @@ export class WorkflowsService {
 		for (const id of ids) {
 			const workflow = await this.findWorkflowById(id);
 			if (workflow.executors.includes(login)) {
-				throw new BadRequestException('Вы уже делаете эту работу');
+				return true;
 			}
 			const newExecutors = workflow.executors.concat(login);
 			const newDescription = this.createNewDescription(
@@ -442,9 +438,6 @@ export class WorkflowsService {
 				break;
 		}
 
-		if (!workflow.executors.includes(login)) {
-			throw new BadRequestException('Вы не делаете эту работу');
-		}
 		const newExecutors = workflow.executors.filter(
 			(item) => item !== login,
 		);
@@ -589,10 +582,10 @@ export class WorkflowsService {
 
 	getListForStat(statParameters: IStatParameters): Promise<IWorkflow[]> {
 		const query: any = {
-			isDeleted: null, // Assuming you want to exclude deleted workflows
+			isDeleted: null,
+			isPublished: { $ne: null },
 		};
 
-		// Adding firm and modification to the query if they are provided
 		if (statParameters.firm) {
 			query.firm = statParameters.firm;
 		}
@@ -600,7 +593,6 @@ export class WorkflowsService {
 			query.modification = statParameters.modification;
 		}
 
-		// Handling date range
 		if (statParameters.dateFrom && statParameters.dateTo) {
 			query.isPublished = {
 				$gte: statParameters.dateFrom,
@@ -609,7 +601,7 @@ export class WorkflowsService {
 		}
 
 		if (statParameters.showChecked && !statParameters.showUnchecked) {
-			query.isCheckedOnStat = true;
+			query.isCheckedOnStat = { $exists: true, $ne: false };
 		} else if (
 			!statParameters.showChecked &&
 			statParameters.showUnchecked
