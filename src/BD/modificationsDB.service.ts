@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-	IModification,
-	IModificationUpdate,
-} from '@/dto-schemas-interfaces/modification.dto.schema';
+import { IModification } from '@/dto-schemas-interfaces/modification.dto.schema';
 import { FIELDS_TO_DELETE } from '@/consts/db';
 
 export interface IModificationsDB {
@@ -39,13 +36,6 @@ export class ModificationsDBService {
 
 	getTitle(id: string): string {
 		return this.modifications[id].title;
-	}
-
-	updateModification(newModification: IModificationUpdate) {
-		this._modifications[newModification._id] = {
-			...this._modifications[newModification._id],
-			...newModification,
-		};
 	}
 
 	deleteModification(id: string) {

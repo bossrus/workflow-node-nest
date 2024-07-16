@@ -28,12 +28,20 @@ export class ModificationsService {
 		private logService: LogService,
 	) {}
 
+	/**
+	 * Initializes the modifications database on module initialization.
+	 */
 	async onModuleInit() {
-		console.log('\tзагружаю modificationsDB');
 		this.modificationsDBService.modifications =
 			await this.loadModificationsFromBase();
 	}
 
+	/**
+	 * Creates a new modification.
+	 * @param createModificationDto - The modification data transfer object.
+	 * @param login - The login of the user creating the modification.
+	 * @returns The created modification.
+	 */
 	async createModification(
 		createModificationDto: IModification,
 		login: string,
@@ -43,38 +51,45 @@ export class ModificationsService {
 		const newModification = await this.modificationModel.create(
 			createModificationDto,
 		);
-		await this.websocket.sendMessage({
-			bd: 'modifications',
-			operation: 'update',
-			id: newModification._id.toString(),
-			version: newModification.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'modification',
-			date: Date.now(),
-			description: 'modification',
-			operation: 'create',
-			idWorker: login,
-			idSubject: newModification._id.toString(),
-		});
+		await this.notifyAndLog('create', newModification, login);
 		this.modificationsDBService.setModification(newModification.toObject());
 		return newModification;
 	}
 
+	/**
+	 * Loads all modifications from the database.
+	 * @returns A list of modifications.
+	 */
 	async loadModificationsFromBase() {
 		return this.modificationModel
 			.find({ isDeleted: null }, DB_IGNORE_FIELDS)
 			.lean();
 	}
 
+	/**
+	 * Finds all modifications.
+	 * @returns The modifications database.
+	 */
 	async findAllModifications(): Promise<IModificationsDB> {
 		return this.modificationsDBService.modifications;
 	}
 
+	/**
+	 * Finds a modification by its ID.
+	 * @param id - The ID of the modification.
+	 * @returns The modification.
+	 */
 	findModificationById(id: string): IModification {
 		return this.modificationsDBService.getById(id);
 	}
 
+	/**
+	 * Updates an existing modification.
+	 * @param updateModification - The modification update data transfer object.
+	 * @param _id - The id modification from update data transfer object
+	 * @param login - The login of the user updating the modification.
+	 * @returns The updated modification.
+	 */
 	async updateModification(
 		{ _id, ...updateModification }: IModificationUpdate,
 		login: string,
@@ -86,10 +101,7 @@ export class ModificationsService {
 			);
 		}
 		const modification = await this.modificationModel.findOne(
-			{
-				_id,
-				isDeleted: null,
-			},
+			{ _id, isDeleted: null },
 			DB_IGNORE_FIELDS,
 		);
 		if (!modification) {
@@ -105,57 +117,29 @@ export class ModificationsService {
 			newModification.titleSlug = makeSlug(updateModification.title);
 		}
 		const savedModification = await this.modificationModel
-			.findOneAndUpdate(
-				{
-					_id,
-					isDeleted: null,
-				},
-				newModification,
-				{ new: true },
-			)
+			.findOneAndUpdate({ _id, isDeleted: null }, newModification, {
+				new: true,
+			})
 			.select(DB_IGNORE_FIELDS)
 			.lean();
-		await this.websocket.sendMessage({
-			bd: 'modifications',
-			operation: 'update',
-			id: savedModification._id.toString(),
-			version: savedModification.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'modification',
-			date: Date.now(),
-			description: 'modification',
-			operation: 'edit',
-			idWorker: login,
-			idSubject: savedModification._id.toString(),
-		});
+		await this.notifyAndLog('edit', savedModification, login);
 		this.modificationsDBService.setModification(savedModification);
 		return savedModification;
 	}
 
+	/**
+	 * Deletes a modification by its ID.
+	 * @param id - The ID of the modification.
+	 * @param login - The login of the user deleting the modification.
+	 */
 	async deleteModification(id: string, login: string): Promise<void> {
 		const modification = this.findModificationById(id);
-		console.log(modification, '\nпришли удалять modification');
 		if (modification) {
-			console.log('>>> и удалили, вроде');
 			await this.modificationModel.findByIdAndUpdate(id, {
 				isDeleted: Date.now(),
 			});
-			await this.websocket.sendMessage({
-				bd: 'modifications',
-				operation: 'delete',
-				id: modification._id.toString(),
-				version: modification.version,
-			});
+			await this.notifyAndLog('delete', modification, login);
 			this.modificationsDBService.deleteModification(id);
-			await this.logService.saveToLog({
-				bd: 'modification',
-				date: Date.now(),
-				description: '',
-				operation: 'delete',
-				idWorker: login,
-				idSubject: modification._id.toString(),
-			});
 		}
 	}
 
@@ -165,6 +149,11 @@ export class ModificationsService {
 	//-----------------------------------------------------------------------------
 	//-----------------------------------------------------------------------------
 
+	/**
+	 * Checks if a modification with the given title already exists.
+	 * @param title - The title of the modification.
+	 * @throws BadRequestException if a modification with the given title already exists.
+	 */
 	private async checkExist(title: string): Promise<void> {
 		const modification = await this.modificationModel.findOne({
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
@@ -172,5 +161,40 @@ export class ModificationsService {
 		if (modification) {
 			throw new BadRequestException('Такой номер журнала уже существует');
 		}
+	}
+
+	/**
+	 * Sends a websocket message and logs the operation.
+	 * @param operation - The type of operation ('create' | 'edit' | 'delete').
+	 * @param modification - The modification object.
+	 * @param login - The login of the user performing the operation.
+	 */
+	private async notifyAndLog(
+		operation: 'create' | 'edit' | 'delete',
+		modification: IModification,
+		login: string,
+	): Promise<void> {
+		const websocketOperation: Record<
+			'create' | 'edit' | 'delete',
+			'delete' | 'update'
+		> = {
+			create: 'update',
+			edit: 'update',
+			delete: 'delete',
+		};
+		await this.websocket.sendMessage({
+			bd: 'modifications',
+			operation: websocketOperation[operation],
+			id: modification._id.toString(),
+			version: modification.version,
+		});
+		await this.logService.saveToLog({
+			bd: 'modification',
+			date: Date.now(),
+			description: 'modification',
+			operation,
+			idWorker: login,
+			idSubject: modification._id.toString(),
+		});
 	}
 }

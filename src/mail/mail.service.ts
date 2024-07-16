@@ -17,20 +17,32 @@ export class MailService {
 		private firmDBService: FirmsDBService,
 	) {}
 
+	/**
+	 * Sends an email confirmation to the user.
+	 * @param email - The recipient's email address.
+	 * @param username - The recipient's username.
+	 * @param url - The confirmation URL.
+	 */
 	async sendEmailConfirmation(email: string, username: string, url: string) {
-		console.log('отправка письма');
 		await this.mailerService.sendMail({
-			to: email, // list of receivers
-			subject: 'Подтверждение доставки писем', // Subject line
-			template: 'confirmation', // The `.hbs` template to use
+			to: email,
+			subject: 'Подтверждение доставки писем',
+			template: 'confirmation',
 			context: {
-				// Data to be sent to template engine.
 				username,
 				url,
 			},
 		});
 	}
 
+	/**
+	 * Sends an email notification about a new order to the department.
+	 * @param departmentId - The ID of the department.
+	 * @param title - The title of the order.
+	 * @param firmId - The ID of the firm.
+	 * @param modificationId - The ID of the modification.
+	 * @param countPictures - The number of pictures.
+	 */
 	async sendEmailNotification(
 		departmentId: string,
 		title: string,
@@ -40,15 +52,14 @@ export class MailService {
 	) {
 		const recipients = this.userDBService.getEmailRecipients(departmentId);
 		if (recipients) {
-			console.log('отправка писем');
 			const firm = this.firmDBService.getTitle(firmId);
 			const modification =
 				this.modificationsDBService.getTitle(modificationId);
 			for (const recipient of recipients) {
 				await this.mailerService.sendMail({
-					to: recipient.email, // list of receivers
-					subject: 'В отдел поступил заказ', // Subject line
-					template: 'notification', // The `.hbs` template to use
+					to: recipient.email,
+					subject: 'В отдел поступил заказ',
+					template: 'notification',
 					context: {
 						name: recipient.name,
 						title,
@@ -61,11 +72,13 @@ export class MailService {
 		}
 	}
 
+	/**
+	 * Sends email notifications about new materials to multiple departments.
+	 * @param mailListByDepartments - The list of departments and their respective materials.
+	 */
 	async sendEmailNotificationPublish(
 		mailListByDepartments: IMailListByDepartments,
 	) {
-		console.log('отправка писем publish');
-		console.log('mailListByDepartments = ', mailListByDepartments);
 		for (const departmentTitle in mailListByDepartments) {
 			const recipients: IEmailRecipient[] =
 				this.userDBService.getEmailRecipients(
@@ -78,32 +91,19 @@ export class MailService {
 				for (const modificationAndFirm in mailListByDepartments[
 					departmentTitle
 				].mailList) {
-					letter += `В ${mailListByDepartments[departmentTitle].mailList[modificationAndFirm].firmTitle} (№ ${mailListByDepartments[departmentTitle].mailList[modificationAndFirm].modificationTitle}):\n`;
-					console.log(
-						'проверяем mailListByDepartments[departmentTitle] = ',
-						mailListByDepartments[departmentTitle],
-					);
-					console.log('modificationAndFirm = ', modificationAndFirm);
-					console.log(
-						'\tитого ',
+					const mailItem =
 						mailListByDepartments[departmentTitle].mailList[
 							modificationAndFirm
-						],
-					);
-					count +=
-						mailListByDepartments[departmentTitle].mailList[
-							modificationAndFirm
-						].titles.length;
-					letter +=
-						mailListByDepartments[departmentTitle].mailList[
-							modificationAndFirm
-						].titles.join('\n');
+						];
+					letter += `В ${mailItem.firmTitle} (№ ${mailItem.modificationTitle}):\n`;
+					count += mailItem.titles.length;
+					letter += mailItem.titles.join('\n');
 				}
 				for (const recipient of recipients) {
 					await this.mailerService.sendMail({
 						to: recipient.email,
-						subject: `Новых заказов в отделе — ${count}`, // Subject line
-						template: 'notificationPublish', // The `.hbs` template to use
+						subject: `Новых заказов в отделе — ${count}`,
+						template: 'notificationPublish',
 						context: {
 							name: recipient.name,
 							letter,

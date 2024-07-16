@@ -20,16 +20,10 @@ export class WebsocketService
 	}
 
 	async handleConnection(client: Socket): Promise<void> {
-		console.log(`Client connected: ${client.id}`);
 		const login = client.handshake.query.login as string;
 		const token = client.handshake.query.loginToken as string;
 
-		console.log('cc\tLogin: ', login);
-		console.log('cc\tloginToken: ', token);
-
 		const user = await this.usersDBService.findUser(login, token);
-
-		console.log('cc\tпользователь: ', user);
 
 		if (!user) {
 			client.disconnect();
@@ -43,15 +37,13 @@ export class WebsocketService
 		}
 	}
 
-	async handleDisconnect(client: Socket): Promise<void> {
-		console.log(`Client disconnected: ${client.id}`);
+	async handleDisconnect(): Promise<void> {
 		await this.sendMessageToAnywhere({
 			bd: 'websocket',
 			operation: 'update',
 			id: JSON.stringify(await this.getConnectedClients()),
 			version: 0,
 		});
-		console.log('клиенты: ', await this.getConnectedClients());
 	}
 
 	async sendMessage(message: IWebsocket) {

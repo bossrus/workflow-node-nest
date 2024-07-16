@@ -28,12 +28,20 @@ export class TypesOfWorkService {
 		private logService: LogService,
 	) {}
 
+	/**
+	 * Initializes the module and loads types of work from the database.
+	 */
 	async onModuleInit() {
-		console.log('\tзагружаю typesOfWorkDB');
 		this.typesOfWorkDBService.typesOfWork =
 			await this.loadTypesOfWorkFromBase();
 	}
 
+	/**
+	 * Creates a new type of work.
+	 * @param createTypeOfWorkDto - The DTO for creating a type of work.
+	 * @param login - The login of the user performing the operation.
+	 * @returns The created type of work.
+	 */
 	async createTypeOfWork(
 		createTypeOfWorkDto: ITypeOfWork,
 		login: string,
@@ -42,38 +50,45 @@ export class TypesOfWorkService {
 		createTypeOfWorkDto.titleSlug = makeSlug(createTypeOfWorkDto.title);
 		const newTypeOfWork =
 			await this.typeOfWorkModel.create(createTypeOfWorkDto);
-		await this.websocket.sendMessage({
-			bd: 'typesOfWork',
-			operation: 'update',
-			id: newTypeOfWork._id.toString(),
-			version: newTypeOfWork.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'type',
-			date: Date.now(),
-			description: '',
-			operation: 'create',
-			idWorker: login,
-			idSubject: newTypeOfWork._id.toString(),
-		});
+		await this.notifyAndLog('create', newTypeOfWork, login);
 		this.typesOfWorkDBService.setTypeOfWork(newTypeOfWork.toObject());
 		return newTypeOfWork;
 	}
 
+	/**
+	 * Loads types of work from the database.
+	 * @returns The types of work from the database.
+	 */
 	async loadTypesOfWorkFromBase() {
 		return this.typeOfWorkModel
 			.find({ isDeleted: null }, DB_IGNORE_FIELDS)
 			.lean();
 	}
 
+	/**
+	 * Finds all types of work.
+	 * @returns All types of work.
+	 */
 	async findAllTypesOfWork(): Promise<ITypesOfWorkDB> {
 		return this.typesOfWorkDBService.typesOfWork;
 	}
 
+	/**
+	 * Finds a type of work by its ID.
+	 * @param id - The ID of the type of work.
+	 * @returns The type of work.
+	 */
 	findTypeOfWorkById(id: string): ITypeOfWork {
 		return this.typesOfWorkDBService.getById(id);
 	}
 
+	/**
+	 * Updates a type of work.
+	 * @param updateTypeOfWork - The DTO for updating a type of work.
+	 * @param _id - The id of  type of work from incoming data.
+	 * @param login - The login of the user performing the operation.
+	 * @returns The updated type of work.
+	 */
 	async updateTypeOfWork(
 		{ _id, ...updateTypeOfWork }: ITypeOfWorkUpdate,
 		login: string,
@@ -114,49 +129,25 @@ export class TypesOfWorkService {
 			)
 			.select(DB_IGNORE_FIELDS)
 			.lean();
-		await this.websocket.sendMessage({
-			bd: 'typesOfWork',
-			operation: 'update',
-			id: savedTypeOfWork._id.toString(),
-			version: savedTypeOfWork.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'type',
-			date: Date.now(),
-			description: '',
-			operation: 'edit',
-			idWorker: login,
-			idSubject: savedTypeOfWork._id.toString(),
-		});
+		await this.notifyAndLog('edit', savedTypeOfWork, login);
 		this.typesOfWorkDBService.setTypeOfWork(savedTypeOfWork);
 		return savedTypeOfWork;
 	}
 
+	/**
+	 * Deletes a type of work.
+	 * @param id - The ID of the type of work.
+	 * @param login - The login of the user performing the operation.
+	 */
 	async deleteTypeOfWork(id: string, login: string): Promise<void> {
 		const typeOfWork = this.findTypeOfWorkById(id);
-		console.log(typeOfWork, '\nпришли удалять typeOfWork');
 		if (typeOfWork) {
-			console.log('>>> и удалили, вроде');
 			const dateOfDelete = Date.now();
 			await this.typeOfWorkModel.findByIdAndUpdate(id, {
 				isDeleted: dateOfDelete,
 			});
-			await this.websocket.sendMessage({
-				bd: 'typesOfWork',
-				operation: 'delete',
-				id: typeOfWork._id.toString(),
-				version: typeOfWork.version,
-			});
+			await this.notifyAndLog('delete', typeOfWork, login);
 			this.typesOfWorkDBService.deleteTypeOfWork(id);
-
-			await this.logService.saveToLog({
-				bd: 'type',
-				date: Date.now(),
-				description: '',
-				operation: 'delete',
-				idWorker: login,
-				idSubject: typeOfWork._id.toString(),
-			});
 		}
 	}
 
@@ -166,6 +157,11 @@ export class TypesOfWorkService {
 	//-----------------------------------------------------------------------------
 	//-----------------------------------------------------------------------------
 
+	/**
+	 * Checks if a type of work with the given title already exists.
+	 * @param title - The title of the type of work.
+	 * @throws BadRequestException if the type of work already exists.
+	 */
 	private async checkExist(title: string): Promise<void> {
 		const typeOfWork = await this.typeOfWorkModel.findOne({
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
@@ -173,5 +169,40 @@ export class TypesOfWorkService {
 		if (typeOfWork) {
 			throw new BadRequestException('Тип работы уже существует');
 		}
+	}
+
+	/**
+	 * Sends a websocket message and logs the operation.
+	 * @param operation - The type of operation ('create' | 'edit' | 'delete').
+	 * @param typeOfWork - The type of work object.
+	 * @param login - The login of the user performing the operation.
+	 */
+	private async notifyAndLog(
+		operation: 'create' | 'edit' | 'delete',
+		typeOfWork: ITypeOfWork,
+		login: string,
+	): Promise<void> {
+		const websocketOperation: Record<
+			'create' | 'edit' | 'delete',
+			'delete' | 'update'
+		> = {
+			create: 'update',
+			edit: 'update',
+			delete: 'delete',
+		};
+		await this.websocket.sendMessage({
+			bd: 'typesOfWork',
+			operation: websocketOperation[operation],
+			id: typeOfWork._id.toString(),
+			version: typeOfWork.version,
+		});
+		await this.logService.saveToLog({
+			bd: 'type',
+			date: Date.now(),
+			description: '',
+			operation,
+			idWorker: login,
+			idSubject: typeOfWork._id.toString(),
+		});
 	}
 }

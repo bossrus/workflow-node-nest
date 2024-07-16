@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import {
-	IDepartment,
-	IDepartmentUpdate,
-} from '@/dto-schemas-interfaces/department.dto.schema';
-import makeSlug from '@/services/makeSlug';
+import { IDepartment } from '@/dto-schemas-interfaces/department.dto.schema';
+
 import { FIELDS_TO_DELETE } from '@/consts/db';
 
 export interface IDepartmentsDB {
@@ -40,20 +37,6 @@ export class DepartmentsDBService {
 
 	delete(id: string) {
 		return delete this._departments[id];
-	}
-
-	updateDepartment(newDepartment: IDepartmentUpdate) {
-		this._departments[newDepartment._id] = {
-			...this._departments[newDepartment._id],
-			...newDepartment,
-		};
-	}
-
-	findByTitle(title: string) {
-		const titleSlug = makeSlug(title);
-		return Object.values(this.departments).find(
-			(dept) => dept.title === title || dept.titleSlug === titleSlug,
-		);
 	}
 
 	getTitle(id: string) {

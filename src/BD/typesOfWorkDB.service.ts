@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-	ITypeOfWork,
-	ITypeOfWorkUpdate,
-} from '@/dto-schemas-interfaces/typeOfWork.dto.schema';
-import makeSlug from '@/services/makeSlug';
+import { ITypeOfWork } from '@/dto-schemas-interfaces/typeOfWork.dto.schema';
 import { FIELDS_TO_DELETE } from '@/consts/db';
 
 export interface ITypesOfWorkDB {
@@ -36,28 +32,6 @@ export class TypesOfWorkDBService {
 
 	getById(id: string): ITypeOfWork {
 		return this._typesOfWork[id];
-	}
-
-	delete(id: string) {
-		return delete this._typesOfWork[id];
-	}
-
-	updateTypeOfWork(newTypeOfWork: ITypeOfWorkUpdate) {
-		this._typesOfWork[newTypeOfWork._id] = {
-			...this._typesOfWork[newTypeOfWork._id],
-			...newTypeOfWork,
-		};
-	}
-
-	findByTitle(title: string) {
-		const titleSlug = makeSlug(title);
-		return Object.values(this.typesOfWork).find(
-			(dept) => dept.title === title || dept.titleSlug === titleSlug,
-		);
-	}
-
-	getTitle(id: string) {
-		return this.typesOfWork[id].title;
 	}
 
 	deleteTypeOfWork(id: string) {

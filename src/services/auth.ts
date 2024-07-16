@@ -13,17 +13,18 @@ import { IAuthInterface } from '@/dto-schemas-interfaces/auth.interface';
 export class UserGuard implements CanActivate {
 	constructor(private usersDBService: UsersDBService) {}
 
+	/**
+	 * Determines if the current request can be activated based on user validation.
+	 * @param context - The execution context of the request.
+	 * @returns A boolean indicating whether the user is valid.
+	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
 		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
 			request.headers;
-		console.log('_id «', _id, '» loginToken = «', loginToken, '»');
-		console.log('\n\n>>>validation User:');
+
 		if (isValidMongodbId(_id)) {
-			console.log('\t_id = ', _id);
-			console.log('\tloginToken = ', loginToken);
 			const user = await this.usersDBService.findUser(_id, loginToken);
-			console.log('\tuser = ', user);
 			return user == true;
 		}
 		return false;
@@ -34,15 +35,17 @@ export class UserGuard implements CanActivate {
 export class AdminGuard implements CanActivate {
 	constructor(private usersDBService: UsersDBService) {}
 
+	/**
+	 * Determines if the current request can be activated based on admin validation.
+	 * @param context - The execution context of the request.
+	 * @returns A boolean indicating whether the user is an admin.
+	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
 		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
 			request.headers;
-		console.log('\n\n>>>validation Admin:');
-		console.log('\t_id = ', _id);
-		console.log('\tloginToken = ', loginToken);
+
 		const user = await this.usersDBService.findAdmin(_id, loginToken);
-		console.log('\tuser = ', user);
 		return user == true;
 	}
 }
@@ -51,16 +54,20 @@ export class AdminGuard implements CanActivate {
 export class ModificationGuard implements CanActivate {
 	constructor(private usersDBService: UsersDBService) {}
 
+	/**
+	 * Determines if the current request can be activated based on modification permissions.
+	 * @param context - The execution context of the request.
+	 * @returns A boolean indicating whether the user has modification permissions.
+	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
 		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
 			request.headers;
-		console.log('\n\n>>>validation Modification:');
+
 		const user = await this.usersDBService.findCanModification(
 			_id,
 			loginToken,
 		);
-		console.log('\tuser = ', user);
 		return user == true;
 	}
 }
@@ -69,12 +76,16 @@ export class ModificationGuard implements CanActivate {
 export class StartStopGuard implements CanActivate {
 	constructor(private usersDBService: UsersDBService) {}
 
+	/**
+	 * Determines if the current request can be activated based on start/stop permissions.
+	 * @param context - The execution context of the request.
+	 * @returns A boolean indicating whether the user has start/stop permissions.
+	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
 		const { auth_login: _id, auth_token: loginToken } = request.headers;
-		console.log('\n\n>>>validation StartStop:');
+
 		const user = await this.usersDBService.findStartStop(_id, loginToken);
-		console.log('\tuser = ', user);
 		return user == true;
 	}
 }
@@ -83,25 +94,21 @@ export class StartStopGuard implements CanActivate {
 export class SeeStatisticGuard implements CanActivate {
 	constructor(private usersDBService: UsersDBService) {}
 
+	/**
+	 * Determines if the current request can be activated based on see statistic permissions.
+	 * @param context - The execution context of the request.
+	 * @returns A boolean indicating whether the user has see statistic permissions.
+	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
 		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
 			request.headers;
-		console.log('\n\n>>>validation StartStop:');
+
 		const user = await this.usersDBService.findCanSeeStatistic(
 			_id,
 			loginToken,
 		);
-		console.log('\tuser = ', user);
 		return user == true;
-	}
-}
-
-//TODO удалить!!!!
-@Injectable()
-export class AlwaysTrueGuard implements CanActivate {
-	canActivate(): boolean {
-		return true;
 	}
 }
 
@@ -115,7 +122,12 @@ const RoleGuards = {
 
 type IRole = keyof typeof RoleGuards;
 
+/**
+ * Custom decorator to apply the appropriate guard based on the role.
+ * @param role - The role to determine which guard to apply.
+ * @returns The decorator to apply the guard.
+ */
 export const Auth = (role: IRole = 'user') =>
-	// applyDecorators(UseGuards(AlwaysTrueGuard));
 	applyDecorators(UseGuards(RoleGuards[role]));
+
 export default Auth;

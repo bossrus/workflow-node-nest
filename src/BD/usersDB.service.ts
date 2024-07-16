@@ -50,11 +50,7 @@ export class UsersDBService {
 	}
 
 	removeToken(id: string): void {
-		console.log('удаляю токен id:', id);
-		console.log('\ttoken:', this._tokens[id]);
-		console.log('все токены до:\n\t', this._tokens);
 		delete this._tokens[id];
-		console.log('все токены после:\n\t', this._tokens);
 	}
 
 	getById(id: string): IUserUpdate {
@@ -133,13 +129,6 @@ export class UsersDBService {
 	//-----------------------------------------------------------------------------
 
 	async findUser(_id: string, loginToken: string) {
-		console.log(
-			'юзер найден =',
-			this.users[_id] &&
-				this._tokens[_id] &&
-				loginToken &&
-				this._tokens[_id] === loginToken,
-		);
 		return (
 			this.users[_id] &&
 			this._tokens[_id] &&

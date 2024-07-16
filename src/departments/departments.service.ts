@@ -28,12 +28,20 @@ export class DepartmentsService {
 		private logService: LogService,
 	) {}
 
+	/**
+	 * Initializes the module by loading departments from the database.
+	 */
 	async onModuleInit() {
-		console.log('\tзагружаю departmentsDB');
 		this.departmentsDBService.departments =
 			await this.loadDepartmentsFromBase();
 	}
 
+	/**
+	 * Creates a new department.
+	 * @param createDepartmentDto - Data transfer object containing department details.
+	 * @param login - The login of the user creating the department.
+	 * @returns The created department.
+	 */
 	async createDepartment(
 		createDepartmentDto: IDepartmentUpdate,
 		login: string,
@@ -42,38 +50,45 @@ export class DepartmentsService {
 		createDepartmentDto.titleSlug = makeSlug(createDepartmentDto.title);
 		const newDepartment =
 			await this.departmentModel.create(createDepartmentDto);
-		await this.websocket.sendMessage({
-			bd: 'departments',
-			operation: 'update',
-			id: newDepartment._id.toString(),
-			version: newDepartment.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'department',
-			date: Date.now(),
-			description: '',
-			operation: 'create',
-			idWorker: login,
-			idSubject: newDepartment._id.toString(),
-		});
+		await this.notifyAndLog('create', newDepartment, login);
 		this.departmentsDBService.setDepartment(newDepartment.toObject());
 		return newDepartment;
 	}
 
+	/**
+	 * Loads departments from the database.
+	 * @returns A list of departments.
+	 */
 	async loadDepartmentsFromBase() {
 		return this.departmentModel
 			.find({ isDeleted: null }, DB_IGNORE_FIELDS)
 			.lean();
 	}
 
+	/**
+	 * Retrieves all departments.
+	 * @returns A list of all departments.
+	 */
 	async findAllDepartments(): Promise<IDepartmentsDB> {
 		return this.departmentsDBService.departments;
 	}
 
+	/**
+	 * Finds a department by its ID.
+	 * @param id - The ID of the department.
+	 * @returns The department with the specified ID.
+	 */
 	findDepartmentById(id: string): IDepartment {
 		return this.departmentsDBService.getById(id);
 	}
 
+	/**
+	 * Updates an existing department.
+	 * @param updateDepartment - Data transfer object containing updated department details.
+	 * @param _id - ID from object containing updated department details.
+	 * @param login - The login of the user updating the department.
+	 * @returns The updated department.
+	 */
 	async updateDepartment(
 		{ _id, ...updateDepartment }: IDepartmentUpdate,
 		login: string,
@@ -111,50 +126,27 @@ export class DepartmentsService {
 			)
 			.select(DB_IGNORE_FIELDS)
 			.lean();
-		await this.websocket.sendMessage({
-			bd: 'departments',
-			operation: 'update',
-			id: savedDepartment._id.toString(),
-			version: savedDepartment.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'department',
-			date: Date.now(),
-			description: '',
-			operation: 'edit',
-			idWorker: login,
-			idSubject: savedDepartment._id.toString(),
-		});
+		await this.notifyAndLog('edit', savedDepartment, login);
 		this.departmentsDBService.setDepartment(savedDepartment);
 		return savedDepartment;
 	}
 
+	/**
+	 * Deletes a department by its ID.
+	 * @param id - The ID of the department to delete.
+	 * @param login - The login of the user deleting the department.
+	 */
 	async deleteDepartment(id: string, login: string): Promise<void> {
 		const department = this.findDepartmentById(id);
-		console.log(department, '\nпришли удалять department');
-		if (department) {
-			console.log('>>> и удалили, вроде');
-			const dateOfDelete = Date.now();
-			await this.departmentModel.findByIdAndUpdate(id, {
-				isDeleted: dateOfDelete,
-			});
-			await this.websocket.sendMessage({
-				bd: 'departments',
-				operation: 'delete',
-				id: department._id.toString(),
-				version: department.version,
-			});
-			this.departmentsDBService.deleteDepartment(id);
-
-			await this.logService.saveToLog({
-				bd: 'department',
-				date: Date.now(),
-				description: '',
-				operation: 'delete',
-				idWorker: login,
-				idSubject: department._id.toString(),
-			});
+		if (!department) {
+			throw new NotFoundException('Нет такого отдела');
 		}
+		const dateOfDelete = Date.now();
+		await this.departmentModel.findByIdAndUpdate(id, {
+			isDeleted: dateOfDelete,
+		});
+		await this.notifyAndLog('delete', department, login);
+		this.departmentsDBService.deleteDepartment(id);
 	}
 
 	//-----------------------------------------------------------------------------
@@ -163,6 +155,11 @@ export class DepartmentsService {
 	//-----------------------------------------------------------------------------
 	//-----------------------------------------------------------------------------
 
+	/**
+	 * Checks if a department with the given title already exists.
+	 * @param title - The title of the department.
+	 * @throws BadRequestException if a department with the given title already exists.
+	 */
 	private async checkExist(title: string): Promise<void> {
 		const department = await this.departmentModel.findOne({
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
@@ -170,5 +167,40 @@ export class DepartmentsService {
 		if (department) {
 			throw new BadRequestException('Отдел уже существует');
 		}
+	}
+
+	/**
+	 * Sends a notification and logs the operation.
+	 * @param operation - The type of operation ('create', 'edit', 'delete').
+	 * @param department - The department involved in the operation.
+	 * @param login - The login of the user performing the operation.
+	 */
+	private async notifyAndLog(
+		operation: 'create' | 'edit' | 'delete',
+		department: IDepartment,
+		login: string,
+	): Promise<void> {
+		const websocketOperation: Record<
+			'create' | 'edit' | 'delete',
+			'delete' | 'update'
+		> = {
+			create: 'update',
+			edit: 'update',
+			delete: 'delete',
+		};
+		await this.websocket.sendMessage({
+			bd: 'departments',
+			operation: websocketOperation[operation],
+			id: department._id.toString(),
+			version: department.version,
+		});
+		await this.logService.saveToLog({
+			bd: 'department',
+			date: Date.now(),
+			description: '',
+			operation,
+			idWorker: login,
+			idSubject: department._id.toString(),
+		});
 	}
 }

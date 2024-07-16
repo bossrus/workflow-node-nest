@@ -19,6 +19,12 @@ import { Auth } from '@/services/auth';
 export class InvitesController {
 	constructor(private readonly inviteToJoinsService: InvitesService) {}
 
+	/**
+	 * Creates a new invite to join
+	 * @param inviteToJoin - invite data
+	 * @param login - login of the user creating the invite
+	 * @returns the created invite
+	 */
 	@Post()
 	@Auth()
 	async createInviteToJoin(
@@ -31,6 +37,11 @@ export class InvitesController {
 		);
 	}
 
+	/**
+	 * Finds an invites by ID
+	 * @param id - ID of the user to whom the invites are intended
+	 * @returns the found invites
+	 */
 	@Get()
 	@Auth()
 	async findInviteToJoinById(
@@ -39,6 +50,11 @@ export class InvitesController {
 		return this.inviteToJoinsService.findInviteToJoinById(id);
 	}
 
+	/**
+	 * Deletes invite by ID
+	 * @param id - ID of the invite
+	 * @param login - login of the user deleting the invite
+	 */
 	@Delete(':id')
 	@Auth()
 	async deleteInviteToJoin(
@@ -48,6 +64,10 @@ export class InvitesController {
 		return this.inviteToJoinsService.deleteInviteToJoin(id, login);
 	}
 
+	/**
+	 * Clears all invites to join
+	 * @param login - ID of the user clearing the invites addressed to them
+	 */
 	@Delete()
 	@Auth()
 	async clearInvitesToJoin(

@@ -22,47 +22,62 @@ export class FirmsService {
 		private logService: LogService,
 	) {}
 
+	/**
+	 * Initialize the service by loading firms from the database.
+	 */
 	async onModuleInit() {
-		console.log('\tзагружаю firmsDB');
 		this.firmsDBService.firms = await this.loadFirmsFromBase();
 	}
 
+	/**
+	 * Create a new firm and log the operation.
+	 * @param createFirmDto - Data Transfer Object for creating a firm.
+	 * @param login - The login of the user performing the operation.
+	 * @returns The created firm.
+	 */
 	async createFirm(createFirmDto: IFirm, login: string): Promise<IFirm> {
 		await this.checkExist(createFirmDto.title);
 		createFirmDto.titleSlug = makeSlug(createFirmDto.title);
 		const newFirm = await this.firmModel.create(createFirmDto);
-		await this.websocket.sendMessage({
-			bd: 'firms',
-			operation: 'update',
-			id: newFirm._id.toString(),
-			version: newFirm.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'firm',
-			date: Date.now(),
-			description: '',
-			operation: 'create',
-			idWorker: login,
-			idSubject: newFirm._id.toString(),
-		});
+		await this.notifyAndLog('edit', newFirm, login);
 		this.firmsDBService.setFirm(newFirm.toObject());
 		return newFirm;
 	}
 
+	/**
+	 * Load firms from the database.
+	 * @returns A list of firms.
+	 */
 	async loadFirmsFromBase() {
 		return this.firmModel
 			.find({ isDeleted: null }, DB_IGNORE_FIELDS)
 			.lean();
 	}
 
+	/**
+	 * Find all firms.
+	 * @returns A list of all firms.
+	 */
 	async findAllFirms(): Promise<IFirmsDB> {
 		return this.firmsDBService.firms;
 	}
 
+	/**
+	 * Find a firm by its ID.
+	 * @param id - The ID of the firm.
+	 * @returns The firm if found.
+	 */
 	findFirmById(id: string): IFirm {
 		return this.firmsDBService.getById(id);
 	}
 
+	/**
+	 * Update an existing firm or create a new one if it doesn't exist.
+	 * @param updateFirm - Data Transfer Object for updating a firm.
+	 * @param _id - ID from Object for updating a firm.
+	 * @param login - The login of the user performing the operation.
+	 * @returns The updated or created firm.
+	 */
 	async updateFirm(
 		{ _id, ...updateFirm }: IFirmUpdate,
 		login: string,
@@ -71,10 +86,7 @@ export class FirmsService {
 			return this.createFirm(updateFirm as IFirm, login);
 		}
 		const firm = await this.firmModel.findOne(
-			{
-				_id,
-				isDeleted: null,
-			},
+			{ _id, isDeleted: null },
 			DB_IGNORE_FIELDS,
 		);
 		if (!firm) {
@@ -90,58 +102,28 @@ export class FirmsService {
 			newFirm.titleSlug = makeSlug(updateFirm.title);
 		}
 		const savedFirm = await this.firmModel
-			.findOneAndUpdate(
-				{
-					_id,
-					isDeleted: null,
-				},
-				newFirm,
-				{ new: true },
-			)
+			.findOneAndUpdate({ _id, isDeleted: null }, newFirm, { new: true })
 			.select(DB_IGNORE_FIELDS)
 			.lean();
-		await this.websocket.sendMessage({
-			bd: 'firms',
-			operation: 'update',
-			id: savedFirm._id.toString(),
-			version: savedFirm.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'firm',
-			date: Date.now(),
-			description: '',
-			operation: 'edit',
-			idWorker: login,
-			idSubject: savedFirm._id.toString(),
-		});
+		await this.notifyAndLog('edit', savedFirm, login);
 		this.firmsDBService.setFirm(savedFirm);
 		return savedFirm;
 	}
 
+	/**
+	 * Delete a firm by its ID and log the operation.
+	 * @param id - The ID of the firm.
+	 * @param login - The login of the user performing the operation.
+	 */
 	async deleteFirm(id: string, login: string): Promise<void> {
 		const firm = this.findFirmById(id);
-		console.log(firm, '\nпришли удалять firm');
 		if (firm) {
-			console.log('>>> и удалили, вроде');
 			const dateOfDelete = Date.now();
 			await this.firmModel.findByIdAndUpdate(id, {
 				isDeleted: dateOfDelete,
 			});
-			await this.websocket.sendMessage({
-				bd: 'firms',
-				operation: 'delete',
-				id: firm._id.toString(),
-				version: firm.version,
-			});
 			this.firmsDBService.deleteFirm(id);
-			await this.logService.saveToLog({
-				bd: 'firm',
-				date: Date.now(),
-				description: '',
-				operation: 'delete',
-				idWorker: login,
-				idSubject: firm._id.toString(),
-			});
+			await this.notifyAndLog('edit', firm, login);
 		}
 	}
 
@@ -151,6 +133,11 @@ export class FirmsService {
 	//-----------------------------------------------------------------------------
 	//-----------------------------------------------------------------------------
 
+	/**
+	 * Check if a firm with the given title already exists.
+	 * @param title - The title of the firm.
+	 * @throws BadRequestException if the firm already exists.
+	 */
 	private async checkExist(title: string): Promise<void> {
 		const firm = await this.firmModel.findOne({
 			$or: [{ titleSlug: makeSlug(title) }, { title: title }],
@@ -158,5 +145,40 @@ export class FirmsService {
 		if (firm) {
 			throw new BadRequestException('Фирма уже существует');
 		}
+	}
+
+	/**
+	 * Sends a notification and logs the operation.
+	 * @param operation - The type of operation ('create', 'edit', 'delete').
+	 * @param firm - The firm involved in the operation.
+	 * @param login - The login of the user performing the operation.
+	 */
+	private async notifyAndLog(
+		operation: 'create' | 'edit' | 'delete',
+		firm: IFirm,
+		login: string,
+	): Promise<void> {
+		const websocketOperation: Record<
+			'create' | 'edit' | 'delete',
+			'delete' | 'update'
+		> = {
+			create: 'update',
+			edit: 'update',
+			delete: 'delete',
+		};
+		await this.websocket.sendMessage({
+			bd: 'firms',
+			operation: websocketOperation[operation],
+			id: firm._id.toString(),
+			version: firm.version,
+		});
+		await this.logService.saveToLog({
+			bd: 'firm',
+			date: Date.now(),
+			description: '',
+			operation,
+			idWorker: login,
+			idSubject: firm._id.toString(),
+		});
 	}
 }

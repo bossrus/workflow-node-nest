@@ -20,12 +20,32 @@ import { ITypesOfWorkDB } from '@/BD/typesOfWorkDB.service';
 export class TypesOfWorkController {
 	constructor(private readonly typesOfWorkService: TypesOfWorkService) {}
 
+	/**
+	 * Get all types of work.
+	 * @returns {Promise<ITypesOfWorkDB>} A promise that resolves to the list of all types of work.
+	 */
 	@Get()
 	@Auth()
 	async findAllTypesOfWork(): Promise<ITypesOfWorkDB> {
 		return this.typesOfWorkService.findAllTypesOfWork();
 	}
 
+	/**
+	 * Update Types Of Work BD on server.
+	 * @returns 'ok'
+	 */
+	@Get('update')
+	@Auth('admin')
+	async updateAllTypesOfWork(): Promise<string> {
+		await this.typesOfWorkService.onModuleInit();
+		return 'ok';
+	}
+
+	/**
+	 * Get a type of work by its ID.
+	 * @param {string} id - The ID of the type of work.
+	 * @returns {Promise<ITypeOfWork>} A promise that resolves to the type of work.
+	 */
 	@Get(':id')
 	@Auth()
 	async findTypeOfWorkById(
@@ -34,6 +54,12 @@ export class TypesOfWorkController {
 		return this.typesOfWorkService.findTypeOfWorkById(id);
 	}
 
+	/**
+	 * Update or create a type of work.
+	 * @param {ITypeOfWorkUpdate} updateTypeOfWorkDto - The data transfer object containing the updated type of work information.
+	 * @param {string} login - The login of the user making the request.
+	 * @returns {Promise<ITypeOfWork>} A promise that resolves to the updated type of work.
+	 */
 	@Patch()
 	@Auth('admin')
 	async updateTypeOfWork(
@@ -46,6 +72,12 @@ export class TypesOfWorkController {
 		);
 	}
 
+	/**
+	 * Delete a type of work by its ID.
+	 * @param {string} id - The ID of the type of work.
+	 * @param {string} login - The login of the user making the request.
+	 * @returns {Promise<void>} A promise that resolves when the type of work is deleted.
+	 */
 	@Delete(':id')
 	@Auth('admin')
 	async deleteTypeOfWork(

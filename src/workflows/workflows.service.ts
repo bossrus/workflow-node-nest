@@ -44,12 +44,17 @@ export class WorkflowsService {
 		private userService: UsersService,
 	) {}
 
+	/**
+	 * Creates a new workflow.
+	 * @param createWorkflowDto - The workflow data transfer object.
+	 * @param login - The login of the user creating the workflow.
+	 * @returns The created workflow.
+	 */
 	async createWorkflow(
 		createWorkflowDto: IWorkflow,
 		login: string,
 	): Promise<IWorkflow> {
 		createWorkflowDto.titleSlug = makeSlug(createWorkflowDto.title);
-		console.log('проверка', createWorkflowDto);
 		if (!createWorkflowDto.mainId) {
 			await this.checkExist(
 				createWorkflowDto.title,
@@ -58,27 +63,18 @@ export class WorkflowsService {
 				createWorkflowDto.modification,
 			);
 		}
-		console.log('\t после проверки');
 		createWorkflowDto.whoAddThisWorkflow = login;
 		const newWorkflow = await this.workflowModel.create(createWorkflowDto);
-		await this.websocket.sendMessage({
-			bd: 'workflows',
-			operation: 'update',
-			id: newWorkflow._id.toString(),
-			version: newWorkflow.version,
-		});
-		await this.logService.saveToLog({
-			bd: 'workflow',
-			date: Date.now(),
-			description: '',
-			operation: 'create',
-			idWorker: login,
-			idSubject: newWorkflow._id.toString(),
-		});
-		console.log('при создании воркфлоу id = ', newWorkflow._id);
+		await this.notifyAndLog('create', newWorkflow, login);
 		return newWorkflow;
 	}
 
+	/**
+	 * Retrieves all workflows that are not marked as deleted or done.
+	 *
+	 * @returns {Promise<IWorkflowsObject>} A promise that resolves to an object containing all workflows,
+	 * where each key is the workflow ID and the value is the workflow data.
+	 */
 	async findAllWorkflows(): Promise<IWorkflowsObject> {
 		const resultArr = await this.workflowModel.find(
 			{ isDeleted: null, isDone: null },
@@ -91,11 +87,19 @@ export class WorkflowsService {
 		return result;
 	}
 
+	/**
+	 * Retrieves all workflows for a specific firm and modification that are not marked as deleted.
+	 *
+	 * @param {Object} params - The parameters for the query.
+	 * @param {string} params.firm - The firm associated with the workflows.
+	 * @param {string} params.modification - The modification associated with the workflows.
+	 * @returns {Promise<IWorkflow[]>} A promise that resolves to an array of workflows matching the specified firm and modification.
+	 */
 	async findAllWorkflowsInThisModification({
 		firm,
 		modification,
 	}: IWorkflowUpdate): Promise<IWorkflow[]> {
-		const result = await this.workflowModel.find(
+		return this.workflowModel.find(
 			{
 				$expr: { $eq: [{ $toString: '$_id' }, '$mainId'] },
 				firm: firm,
@@ -104,10 +108,15 @@ export class WorkflowsService {
 			},
 			'_id title',
 		);
-		console.log('\tрезультат поиска в модификации', result);
-		return result;
 	}
 
+	/**
+	 * Retrieves a workflow by its ID.
+	 *
+	 * @param id - The ID of the workflow to retrieve.
+	 * @returns A promise that resolves to the workflow object if found.
+	 * @throws NotFoundException if the workflow is not found or is marked as deleted or done.
+	 */
 	async findWorkflowById(id: string): Promise<IWorkflow> {
 		const workflow = await this.workflowModel.findOne(
 			{
@@ -123,6 +132,15 @@ export class WorkflowsService {
 		return workflow;
 	}
 
+	/**
+	 * Updates an existing workflow or creates a new one if the ID is not provided.
+	 *
+	 * @param updateWorkflow - An object containing the workflow update data. If `_id` is not provided, a new workflow will be created.
+	 * @param _id - ID object from the workflow update data.
+	 * @param login - The login of the user performing the update.
+	 * @returns A promise that resolves to the updated or newly created workflow.
+	 * @throws NotFoundException if the workflow to be updated is not found or is marked as deleted.
+	 */
 	async updateWorkflow(
 		{ _id, ...updateWorkflow }: IWorkflowUpdate,
 		login: string,
@@ -145,7 +163,6 @@ export class WorkflowsService {
 			...updateWorkflow,
 			version: workflow.version + 1,
 		};
-		console.log('проверка', newWorkflow);
 		if (updateWorkflow.title) {
 			const firm = updateWorkflow.firm || workflow.firm;
 			const modification =
@@ -210,7 +227,7 @@ export class WorkflowsService {
 			)
 		) {
 			await this.logService.saveToLog({
-				bd: 'department',
+				bd: 'workflow',
 				date: Date.now(),
 				description: '',
 				operation: 'edit',
@@ -221,6 +238,13 @@ export class WorkflowsService {
 		return savedWorkflow;
 	}
 
+	/**
+	 * Publishes a list of workflows by their IDs.
+	 *
+	 * @param ids - An object containing an array of workflow IDs to be published.
+	 * @param login - The login of the user performing the publish operation.
+	 * @returns A promise that resolves to a string indicating the publish operation is done.
+	 */
 	async publishWorkflow({ ids }: IMongoIdArray, login: string) {
 		const workflows = await this.workflowModel
 			.find({
@@ -290,6 +314,13 @@ export class WorkflowsService {
 		return 'publish done';
 	}
 
+	/**
+	 * Marks a list of workflows as checked and logs the operation.
+	 *
+	 * @param ids - An object containing an array of workflow IDs to be marked as checked.
+	 * @param login - The login of the user performing the check operation.
+	 * @returns A promise that resolves to a string indicating the check operation is done.
+	 */
 	async checkedWorkflow({ ids }: IMongoIdArray, login: string) {
 		const workflows = await this.workflowModel.find({
 			_id: { $in: ids },
@@ -316,6 +347,14 @@ export class WorkflowsService {
 		return 'checked done';
 	}
 
+	/**
+	 * Creates a new description by appending new information along with the current date and user details.
+	 *
+	 * @param description - The existing description to which new information will be appended.
+	 * @param newInfo - The new information to be added to the description.
+	 * @param login - The login of the user adding the new information.
+	 * @returns The updated description string with the new information appended, including the current date and user details.
+	 */
 	createNewDescription(description: string, newInfo: string, login: string) {
 		const currentDate = new Date();
 		const formattedDate = currentDate
@@ -327,7 +366,7 @@ export class WorkflowsService {
 				minute: '2-digit',
 				hourCycle: 'h24', // для 24-часового формата времени
 			})
-			.replace(/\//g, '.'); // заменяем / на .
+			.replace(/\//g, '.');
 		return (
 			description +
 			'\n\n>>> ' +
@@ -337,9 +376,16 @@ export class WorkflowsService {
 		);
 	}
 
+	/**
+	 * Adds new information to the description of a workflow.
+	 *
+	 * @param id - The ID of the workflow to update.
+	 * @param textin_param - An object containing the new text to add to the description.
+	 * @param login - The login of the user adding the new information.
+	 * @returns A promise that resolves to the updated workflow object.
+	 */
 	async addToDescription(id: string, textin_param, login: string) {
 		const text = textin_param.text;
-		console.log('\n', text, '\n');
 		const workflow = await this.findWorkflowById(id);
 		const newDescription = this.createNewDescription(
 			workflow.description,
@@ -365,6 +411,13 @@ export class WorkflowsService {
 		return newWorkflow;
 	}
 
+	/**
+	 * Assigns the current user to the specified workflows and updates the workflow and user details accordingly.
+	 *
+	 * @param ids - An object containing an array of workflow IDs to be taken to work.
+	 * @param login - The login of the user taking the workflows to work.
+	 * @returns A promise that resolves to `true` if the operation is successful.
+	 */
 	async takeToWork({ ids }: IMongoIdArray, login: string) {
 		for (const id of ids) {
 			const workflow = await this.findWorkflowById(id);
@@ -407,6 +460,17 @@ export class WorkflowsService {
 		return true;
 	}
 
+	/**
+	 * Closes a workflow and updates its status and department if necessary.
+	 *
+	 * @param id - The ID of the workflow to close.
+	 * @param login - The login of the user performing the close operation.
+	 * @param newDepartment - (Optional) The ID of the new department to transfer the workflow to.
+	 *                        Special values: 'closeWork' to mark the workflow as done,
+	 *                        'justClose' to mark the user's part as done without changing the department.
+	 * @returns A promise that resolves to the updated workflow object.
+	 * @throws BadRequestException if the newDepartment ID is invalid.
+	 */
 	async closeWork(id: string, login: string, newDepartment?: string) {
 		if (
 			newDepartment &&
@@ -492,37 +556,36 @@ export class WorkflowsService {
 		return newWorkflow;
 	}
 
+	/**
+	 * Deletes a workflow by marking it as deleted and updating its title and slug with a timestamp.
+	 * Also sends a websocket message and logs the delete operation.
+	 *
+	 * @param id - The ID of the workflow to delete.
+	 * @param login - The login of the user performing the delete operation.
+	 * @returns A promise that resolves to void.
+	 */
 	async deleteWorkflow(id: string, login: string): Promise<void> {
 		const workflow = await this.workflowModel.findOne({ _id: id });
-		console.log(workflow, '\nпришли удалять workflow');
 		if (workflow) {
-			console.log('>>> и удалили, вроде');
 			workflow.title = workflow.title + Date.now().toString();
 			workflow.titleSlug = workflow.titleSlug + Date.now().toString();
 			workflow.isDeleted = Date.now();
 			await workflow.save();
-			await this.websocket.sendMessage({
-				bd: 'workflows',
-				operation: 'delete',
-				id: workflow._id.toString(),
-				version: workflow.version,
-			});
-
-			await this.logService.saveToLog({
-				bd: 'workflow',
-				date: Date.now(),
-				description: '',
-				operation: 'delete',
-				idWorker: login,
-				idSubject: workflow._id.toString(),
-			});
+			await this.notifyAndLog('delete', workflow, login);
 		}
 	}
 
+	/**
+	 * Generates a mail list based on workflow IDs and their lookup information.
+	 *
+	 * @param workflowIDs - An array of workflow IDs to be included in the mail list.
+	 * @param workflowLookup - An object containing workflow details keyed by workflow ID.
+	 * @returns An object representing the mail list, categorized by modification and firm.
+	 */
 	private getMailList(
 		workflowIDs: string[],
 		workflowLookup: IWorkflowsObject,
-	) {
+	): IMailList {
 		const mailList: IMailList = {};
 		workflowIDs.sort((a, b) => {
 			const workflowA = workflowLookup[a];
@@ -544,15 +607,16 @@ export class WorkflowsService {
 
 			return 0;
 		});
+
 		let oldModification: string =
 			workflowLookup[workflowIDs[0]].modification;
 		let oldFirm: string = workflowLookup[workflowIDs[0]].firm;
 		let titles: string[] = [];
+
 		workflowIDs.forEach((workflowId) => {
 			if (
-				oldModification ==
-					workflowLookup[workflowIDs[0]].modification &&
-				oldFirm === workflowLookup[workflowIDs[0]].firm
+				oldModification === workflowLookup[workflowId].modification &&
+				oldFirm === workflowLookup[workflowId].firm
 			) {
 				titles.push(
 					`${workflowLookup[workflowId].title} (картинок — ${workflowLookup[workflowId].countPictures} шт.)`,
@@ -564,11 +628,12 @@ export class WorkflowsService {
 					firmTitle: this.firmDBService.getTitle(oldFirm),
 					titles,
 				};
-				oldModification = workflowLookup[workflowIDs[0]].modification;
-				oldFirm = workflowLookup[workflowIDs[0]].firm;
+				oldModification = workflowLookup[workflowId].modification;
+				oldFirm = workflowLookup[workflowId].firm;
 				titles = [workflowLookup[workflowId].title];
 			}
 		});
+
 		if (!(oldModification + oldFirm in mailList)) {
 			mailList[oldModification + oldFirm] = {
 				modificationTitle:
@@ -577,10 +642,19 @@ export class WorkflowsService {
 				titles,
 			};
 		}
+
 		return mailList;
 	}
 
-	getListForStat(statParameters: IStatParameters): Promise<IWorkflow[]> {
+	/**
+	 * Retrieves a list of workflows based on the provided statistical parameters.
+	 *
+	 * @param statParameters - The parameters to filter the workflows.
+	 * @returns A promise that resolves to an array of workflows matching the criteria.
+	 */
+	async getListForStat(
+		statParameters: IStatParameters,
+	): Promise<IWorkflow[]> {
 		const query: any = {
 			isDeleted: null,
 			isPublished: { $ne: null },
@@ -612,27 +686,35 @@ export class WorkflowsService {
 			];
 		}
 
-		console.log('запрос = ', query);
-
 		return this.workflowModel.find(query);
 	}
 
+	/**
+	 * Retrieves workflow details based on the provided ID.
+	 *
+	 * @param id - The ID of the workflow to retrieve details for.
+	 * @returns A promise that resolves to an array of workflows matching the criteria.
+	 */
 	getWorkflowDetails(id: string): Promise<IWorkflow[]> {
 		const query: any = {
 			isDeleted: null,
 			mainId: id,
 		};
 
-		console.log('запрос = ', query);
-
 		return this.workflowModel.find(query);
 	}
 
-	showStatistic(statParameters: IStatParameters, id: string) {
-		console.log('\ni = ', id, '\nstatParameters:', statParameters);
+	/**
+	 * Shows statistics based on the provided parameters.
+	 *
+	 * @param statParameters - The parameters to filter the workflows.
+	 * @param id - The ID of the workflow to retrieve details for (optional).
+	 * @returns A promise that resolves to an array of workflows matching the criteria.
+	 */
+	async showStatistic(statParameters: IStatParameters, id: string) {
 		return id != undefined
-			? this.getWorkflowDetails(id)
-			: this.getListForStat(statParameters);
+			? await this.getWorkflowDetails(id)
+			: await this.getListForStat(statParameters);
 	}
 
 	//-----------------------------------------------------------------------------
@@ -641,6 +723,17 @@ export class WorkflowsService {
 	//-----------------------------------------------------------------------------
 	//-----------------------------------------------------------------------------
 
+	/**
+	 * Checks if a workflow with the given title or titleSlug, firm, and modification already exists.
+	 * Throws a BadRequestException if a matching workflow is found.
+	 *
+	 * @param title - The title of the workflow.
+	 * @param titleSlug - The slugified title of the workflow.
+	 * @param firm - The firm associated with the workflow.
+	 * @param modification - The modification associated with the workflow.
+	 * @param id - (Optional) The ID of the workflow to exclude from the check.
+	 * @throws BadRequestException if a matching workflow is found.
+	 */
 	private async checkExist(
 		title: string,
 		titleSlug: string,
@@ -683,5 +776,40 @@ export class WorkflowsService {
 		if (workflows.length > 0) {
 			throw new BadRequestException('Такая работа уже существует');
 		}
+	}
+
+	/**
+	 * Sends a websocket message and logs the operation.
+	 * @param operation - The type of operation ('create' | 'edit' | 'delete').
+	 * @param workflow - The workflow object.
+	 * @param login - The login of the user performing the operation.
+	 */
+	private async notifyAndLog(
+		operation: 'create' | 'edit' | 'delete',
+		workflow: IWorkflow,
+		login: string,
+	): Promise<void> {
+		const websocketOperation: Record<
+			'create' | 'edit' | 'delete',
+			'delete' | 'update'
+		> = {
+			create: 'update',
+			edit: 'update',
+			delete: 'delete',
+		};
+		await this.websocket.sendMessage({
+			bd: 'workflows',
+			operation: websocketOperation[operation],
+			id: workflow._id.toString(),
+			version: workflow.version,
+		});
+		await this.logService.saveToLog({
+			bd: 'workflow',
+			date: Date.now(),
+			description: '',
+			operation,
+			idWorker: login,
+			idSubject: workflow._id.toString(),
+		});
 	}
 }

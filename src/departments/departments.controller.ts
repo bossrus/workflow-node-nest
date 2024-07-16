@@ -20,12 +20,29 @@ import { IDepartmentsDB } from '@/BD/departmentsDB.service';
 export class DepartmentsController {
 	constructor(private readonly departmentsService: DepartmentsService) {}
 
+	/**
+	 * Get all departments from BD object
+	 */
 	@Get()
 	@Auth()
 	async findAllDepartments(): Promise<IDepartmentsDB> {
 		return this.departmentsService.findAllDepartments();
 	}
 
+	/**
+	 * Update departments BD object
+	 */
+	@Get('update')
+	@Auth('admin')
+	async updateAllDepartments(): Promise<string> {
+		await this.departmentsService.onModuleInit();
+		return 'ok';
+	}
+
+	/**
+	 * Get department by ID
+	 * @param id - Department ID
+	 */
 	@Get(':id')
 	@Auth()
 	async findDepartmentById(
@@ -34,6 +51,11 @@ export class DepartmentsController {
 		return this.departmentsService.findDepartmentById(id);
 	}
 
+	/**
+	 * Update or create department
+	 * @param updateDepartmentDto - Department update data
+	 * @param login - Authenticated user's login
+	 */
 	@Patch()
 	@Auth('admin')
 	async updateDepartment(
@@ -46,6 +68,11 @@ export class DepartmentsController {
 		);
 	}
 
+	/**
+	 * Delete department by ID
+	 * @param id - Department ID
+	 * @param login - Authenticated user's login
+	 */
 	@Delete(':id')
 	@Auth('admin')
 	async deleteDepartment(

@@ -15,34 +15,27 @@ export class FlashesService {
 		private logService: LogService,
 	) {}
 
+	/**
+	 * Creates a new flash message and logs the operation.
+	 * @param createFlashDto - The flash message data transfer object.
+	 * @param login - The login of the user creating the flash message.
+	 * @returns The created flash message.
+	 */
 	async createFlash(
 		createFlashDto: IFlashMessages,
 		login: string,
 	): Promise<IFlashMessages> {
 		const newFlash = await this.flashModel.create(createFlashDto);
-		//если приходит сообщение проверить flash — то id — это не id flash, а id юзера
-		await this.websocket.sendMessage({
-			bd: 'flashes',
-			operation: 'update',
-			id: createFlashDto.to,
-			version: 0,
-		});
-
-		await this.logService.saveToLog({
-			bd: 'flash',
-			date: Date.now(),
-			description: '',
-			operation: 'create',
-			idWorker: login,
-			idSubject: newFlash._id.toString(),
-		});
+		await this.notifyAndLog('create', newFlash, login, createFlashDto.to);
 		return newFlash;
 	}
 
+	/**
+	 * Finds flash messages by the recipient's ID.
+	 * @param id - The recipient's ID.
+	 * @returns An array of flash messages.
+	 */
 	async findFlashById(id: string): Promise<IFlashMessages[]> {
-		// if (!flash || flash.length === 0) {
-		// 	throw new NotFoundException('Нет такого сообщения');
-		// }
 		return this.flashModel.find(
 			{
 				to: id,
@@ -52,23 +45,59 @@ export class FlashesService {
 		);
 	}
 
+	/**
+	 * Deletes flash messages for a specific user and logs the operation.
+	 * @param login - The login of the user whose flash messages are to be deleted.
+	 */
 	async deleteFlash(login: string): Promise<void> {
-		const flash = await this.flashModel.find({ to: login });
-		console.log(flash, '\nпришли удалять flash');
-		if (flash.length > 0) {
-			flash.forEach(async (f) => {
-				f.isDeleted = Date.now();
-				await f.save();
-				await this.logService.saveToLog({
-					bd: 'flash',
-					date: (f.isDeleted = Date.now()),
-					description: '',
-					operation: 'delete',
-					idWorker: login,
-					idSubject: f._id.toString(),
-				});
-			});
-			console.log('>>> и удалили, вроде');
+		const flashes = await this.flashModel.find({ to: login });
+		if (flashes.length > 0) {
+			for (const flash of flashes) {
+				flash.isDeleted = Date.now();
+				await flash.save();
+				await this.notifyAndLog('delete', flash, login, login);
+			}
 		}
+	}
+
+	/**
+	 * Sends a websocket message and logs the operation.
+	 * @param operation - The type of operation ('create' | 'edit' | 'delete').
+	 * @param flash - The flash message object.
+	 * @param login - The login of the user performing the operation.
+	 * @param recipientId - The ID of the recipient of the flash message.
+	 */
+	private async notifyAndLog(
+		operation: 'create' | 'edit' | 'delete',
+		flash: IFlashMessages,
+		login: string,
+		recipientId: string,
+	): Promise<void> {
+		const websocketOperation: Record<
+			'create' | 'edit' | 'delete',
+			'delete' | 'update'
+		> = {
+			create: 'update',
+			edit: 'update',
+			delete: 'delete',
+		};
+
+		if (operation != 'delete') {
+			await this.websocket.sendMessage({
+				bd: 'flashes',
+				operation: websocketOperation[operation],
+				id: recipientId,
+				version: 0,
+			});
+		}
+
+		await this.logService.saveToLog({
+			bd: 'flash',
+			date: Date.now(),
+			description: '',
+			operation,
+			idWorker: login,
+			idSubject: flash._id.toString(),
+		});
 	}
 }

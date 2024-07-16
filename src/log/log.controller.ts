@@ -8,6 +8,12 @@ import { IMongoIdArray } from '@/dto-schemas-interfaces/mongoIds.dto.schema';
 export class LogController {
 	constructor(private readonly logService: LogService) {}
 
+	/**
+	 * Retrieves the log by workflow IDs.
+	 *
+	 * @param {IMongoIdArray} workflowIds - Array of workflow IDs.
+	 * @returns {Promise<ILogObject>} - Log object.
+	 */
 	@Post('')
 	@Auth()
 	async getLogById(@Body() workflowIds: IMongoIdArray): Promise<ILogObject> {
