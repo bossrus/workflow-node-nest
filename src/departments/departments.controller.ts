@@ -60,7 +60,7 @@ export class DepartmentsController {
 	@Auth('admin')
 	async updateDepartment(
 		@Body() updateDepartmentDto: IDepartmentUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IDepartment> {
 		return this.departmentsService.updateDepartment(
 			updateDepartmentDto,
@@ -77,7 +77,7 @@ export class DepartmentsController {
 	@Auth('admin')
 	async deleteDepartment(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.departmentsService.deleteDepartment(id, login);
 	}

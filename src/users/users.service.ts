@@ -302,16 +302,21 @@ export class UsersService {
 			throw new NotFoundException('Нет такого пользователя');
 		}
 		const salt = await genSalt(13);
-		user.loginToken = salt;
+		//условие добавлено для того, чтобы можно было войти в систему сразу несколько пользователей с одним логином
+		//можно сделать идентификацию компьютера, и на каждый отдельный компьютер сделать свой токен,
+		// но в данном проекте такой уровень безопасности не нужен
+		if (!user.loginToken) {
+			user.loginToken = salt;
+		}
 		this.usersDBService.setUser({
 			_id: user._id.toString(),
-			loginToken: salt,
+			loginToken: user.loginToken,
 		});
 		await user.save();
 		return {
 			[user.id]: {
 				...this.usersDBService.getById(user.id.toString()),
-				loginToken: salt,
+				loginToken: user.loginToken,
 			},
 		};
 	}

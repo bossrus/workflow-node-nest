@@ -16,7 +16,7 @@ export class WebsocketService
 	server: Server;
 
 	constructor(private usersDBService: UsersDBService) {
-		console.log(`Websocket Server started on http://localhost:3333`);
+		console.log('Websocket started');
 	}
 
 	async handleConnection(client: Socket): Promise<void> {
@@ -47,6 +47,7 @@ export class WebsocketService
 	}
 
 	async sendMessage(message: IWebsocket) {
+		// console.log('отсылка сообщения в сокет', message);
 		if (message.bd === 'flashes' || message.bd === 'invites') {
 			await this.sendMessageToUser(message);
 		} else {
@@ -71,7 +72,7 @@ export class WebsocketService
 		const online: string[] = [];
 		[...this.server.sockets.sockets.values()].forEach((socket) => {
 			const login = socket.handshake.query.login as string;
-			if (!(login in online)) online.push(login);
+			if (!online.includes(login)) online.push(login);
 		});
 		return online;
 	}

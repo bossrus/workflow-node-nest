@@ -58,7 +58,7 @@ export class FirmsController {
 	@Auth('admin')
 	async updateFirm(
 		@Body() updateFirmDto: IFirmUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IFirm> {
 		return this.firmsService.updateFirm(updateFirmDto, login);
 	}
@@ -72,7 +72,7 @@ export class FirmsController {
 	@Auth('admin')
 	async deleteFirm(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.firmsService.deleteFirm(id, login);
 	}

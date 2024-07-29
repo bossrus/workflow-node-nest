@@ -29,7 +29,7 @@ export class InvitesController {
 	@Auth()
 	async createInviteToJoin(
 		@Body() inviteToJoin: IInviteToJoin,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IInviteToJoin> {
 		return this.inviteToJoinsService.createInviteToJoin(
 			inviteToJoin,
@@ -45,7 +45,7 @@ export class InvitesController {
 	@Get()
 	@Auth()
 	async findInviteToJoinById(
-		@Headers('auth_login') id: string,
+		@Headers('authlogin') id: string,
 	): Promise<IInvitesObject> {
 		return this.inviteToJoinsService.findInviteToJoinById(id);
 	}
@@ -59,7 +59,7 @@ export class InvitesController {
 	@Auth()
 	async deleteInviteToJoin(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.inviteToJoinsService.deleteInviteToJoin(id, login);
 	}
@@ -71,7 +71,7 @@ export class InvitesController {
 	@Delete()
 	@Auth()
 	async clearInvitesToJoin(
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.inviteToJoinsService.clearInvitesToJoin(login);
 	}

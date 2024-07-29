@@ -17,7 +17,7 @@ export class FlashesController {
 	@Auth()
 	async createFlash(
 		@Body() flash: IFlashMessages,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IFlashMessages> {
 		return this.flashesService.createFlash(flash, login);
 	}
@@ -30,7 +30,7 @@ export class FlashesController {
 	@Get()
 	@Auth()
 	async findFlashById(
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IFlashMessages[]> {
 		return this.flashesService.findFlashById(login);
 	}
@@ -42,7 +42,7 @@ export class FlashesController {
 	 */
 	@Delete()
 	@Auth()
-	async deleteFlash(@Headers('auth_login') login: string): Promise<void> {
+	async deleteFlash(@Headers('authlogin') login: string): Promise<void> {
 		return this.flashesService.deleteFlash(login);
 	}
 }

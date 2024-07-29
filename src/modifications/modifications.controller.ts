@@ -66,7 +66,7 @@ export class ModificationsController {
 	@Auth('admin')
 	async updateModification(
 		@Body() updateModificationDto: IModificationUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IModification> {
 		return this.modificationsService.updateModification(
 			updateModificationDto,
@@ -85,7 +85,7 @@ export class ModificationsController {
 	@Auth('admin')
 	async deleteModification(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.modificationsService.deleteModification(id, login);
 	}

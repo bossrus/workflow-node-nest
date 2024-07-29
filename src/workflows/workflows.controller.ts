@@ -72,7 +72,7 @@ export class WorkflowsController {
 	@Auth('startStop')
 	async updateWorkflow(
 		@Body() updateWorkflowDto: IWorkflowUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IWorkflow> {
 		return this.workflowsService.updateWorkflow(updateWorkflowDto, login);
 	}
@@ -87,7 +87,7 @@ export class WorkflowsController {
 	@Auth('startStop')
 	async publishWorkflow(
 		@Body() workflowIds: IMongoIdArray,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<string> {
 		return this.workflowsService.publishWorkflow(workflowIds, login);
 	}
@@ -102,7 +102,7 @@ export class WorkflowsController {
 	@Auth('seeStatistic')
 	async checkedWorkflow(
 		@Body() workflowIds: IMongoIdArray,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<string> {
 		return this.workflowsService.checkedWorkflow(workflowIds, login);
 	}
@@ -119,7 +119,7 @@ export class WorkflowsController {
 	async addToDescription(
 		@Body() text: string,
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IWorkflow> {
 		return this.workflowsService.addToDescription(id, text, login);
 	}
@@ -134,7 +134,7 @@ export class WorkflowsController {
 	@Auth()
 	async takeInWork(
 		@Body() workflowIds: IMongoIdArray,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<boolean> {
 		return this.workflowsService.takeToWork(workflowIds, login);
 	}
@@ -151,7 +151,7 @@ export class WorkflowsController {
 	async closeWork(
 		@Body() newDepartment: Record<string, string>,
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IWorkflow> {
 		return this.workflowsService.closeWork(
 			id,
@@ -185,7 +185,7 @@ export class WorkflowsController {
 	@Auth('startStop')
 	async deleteWorkflow(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.workflowsService.deleteWorkflow(id, login);
 	}

@@ -64,7 +64,7 @@ export class TypesOfWorkController {
 	@Auth('admin')
 	async updateTypeOfWork(
 		@Body() updateTypeOfWorkDto: ITypeOfWorkUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<ITypeOfWork> {
 		return this.typesOfWorkService.updateTypeOfWork(
 			updateTypeOfWorkDto,
@@ -82,7 +82,7 @@ export class TypesOfWorkController {
 	@Auth('admin')
 	async deleteTypeOfWork(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.typesOfWorkService.deleteTypeOfWork(id, login);
 	}

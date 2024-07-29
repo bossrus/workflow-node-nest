@@ -20,9 +20,8 @@ export class UserGuard implements CanActivate {
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
-		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
+		const { authlogin: _id, authtoken: loginToken }: IAuthInterface =
 			request.headers;
-
 		if (isValidMongodbId(_id)) {
 			const user = await this.usersDBService.findUser(_id, loginToken);
 			return user == true;
@@ -42,7 +41,7 @@ export class AdminGuard implements CanActivate {
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
-		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
+		const { authlogin: _id, authtoken: loginToken }: IAuthInterface =
 			request.headers;
 
 		const user = await this.usersDBService.findAdmin(_id, loginToken);
@@ -61,7 +60,7 @@ export class ModificationGuard implements CanActivate {
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
-		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
+		const { authlogin: _id, authtoken: loginToken }: IAuthInterface =
 			request.headers;
 
 		const user = await this.usersDBService.findCanModification(
@@ -83,7 +82,7 @@ export class StartStopGuard implements CanActivate {
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
-		const { auth_login: _id, auth_token: loginToken } = request.headers;
+		const { authlogin: _id, authtoken: loginToken } = request.headers;
 
 		const user = await this.usersDBService.findStartStop(_id, loginToken);
 		return user == true;
@@ -101,7 +100,7 @@ export class SeeStatisticGuard implements CanActivate {
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
-		const { auth_login: _id, auth_token: loginToken }: IAuthInterface =
+		const { authlogin: _id, authtoken: loginToken }: IAuthInterface =
 			request.headers;
 
 		const user = await this.usersDBService.findCanSeeStatistic(

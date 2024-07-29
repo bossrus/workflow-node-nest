@@ -39,3 +39,4 @@ lerna-debug.log*
 
 # secret fields
 /src/consts/email.ts
+/src/consts/db.ts

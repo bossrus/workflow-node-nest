@@ -53,8 +53,8 @@ export class UsersController {
 	@Get('auth')
 	@Auth()
 	async getAuthUser(
-		@Headers('auth_login') login: string,
-		@Headers('auth_token') token: string,
+		@Headers('authlogin') login: string,
+		@Headers('authtoken') token: string,
 	) {
 		return this.usersService.getAuthUser(login, token);
 	}
@@ -133,7 +133,7 @@ export class UsersController {
 	@Auth()
 	async showMe(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IUserUpdate> {
 		return this.usersService.showMe(id, login);
 	}
@@ -148,7 +148,7 @@ export class UsersController {
 	@Auth('admin')
 	async updateUser(
 		@Body() updateUserDto: IUserUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IUser> {
 		return this.usersService.updateUser(updateUserDto, login);
 	}
@@ -163,7 +163,7 @@ export class UsersController {
 	@Auth()
 	async updateUsersEmail(
 		@Body() updateUserDto: IUserUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<boolean> {
 		return this.usersService.updateUsersEmail(updateUserDto, login);
 	}
@@ -178,7 +178,7 @@ export class UsersController {
 	@Auth()
 	async updateMe(
 		@Body() updateUserDto: IUserUpdate,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<IUser> {
 		return this.usersService.updateMe(updateUserDto, login);
 	}
@@ -193,7 +193,7 @@ export class UsersController {
 	@Auth('admin')
 	async deleteUser(
 		@Param('id', isValidIdPipe) id: string,
-		@Headers('auth_login') login: string,
+		@Headers('authlogin') login: string,
 	): Promise<void> {
 		return this.usersService.deleteUser(id, login);
 	}

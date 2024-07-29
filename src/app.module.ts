@@ -16,7 +16,9 @@ import { WorkflowsModule } from '@/workflows/workflows.module';
 
 @Module({
 	imports: [
-		MongooseModule.forRoot(BD_URI),
+		MongooseModule.forRoot(BD_URI, {
+			dbName: 'workflows',
+		}),
 		WebsocketModule,
 		LogModule,
 		UsersModule,

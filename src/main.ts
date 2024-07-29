@@ -1,21 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as fs from 'fs';
 import { ValidationPipe } from '@nestjs/common';
 
-const httpsOptions = {
-	key: fs.readFileSync('.localcert/server.key'),
-	cert: fs.readFileSync('.localcert/server.crt'),
-};
-
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule, {
-		httpsOptions,
-	});
+	const app = await NestFactory.create(AppModule);
 	app.useGlobalPipes(new ValidationPipe()); // глобальная проверка каждого входящего запроса
-	app.enableCors();
-	console.log('enable cors');
-	await app.listen(3000);
+	app.enableCors({
+		origin: 'https://qazxs.fun', // Разрешить запросы с этого домена
+		methods: ['GET,HEAD,PUT,PATCH,POST,DELETE'], // Разрешенные методы
+		credentials: true, // Разрешить отправку куки
+	});
+	console.log('\t\t ******** \t\t CORS enabled for https://qazxs.fun');
+	await app.listen(3100);
 	console.log(`Application is running on: ${await app.getUrl()}`);
 }
 
